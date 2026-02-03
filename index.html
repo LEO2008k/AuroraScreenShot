@@ -3,7 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; frame-ancestors 'none';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta name="description" content="Aurora Screen Shot - The advanced, AI-powered screenshot tool for macOS.">
     <title>Aurora Screen Shot - Next Gen Screenshot Tool</title>
     <style>
         :root {
@@ -20,12 +27,12 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow-x: hidden;
             position: relative;
         }
 
@@ -55,7 +62,6 @@
             width: 50vw;
             height: 50vw;
             background: #4ade80;
-            /* Green */
             animation-delay: 0s;
         }
 
@@ -65,7 +71,6 @@
             width: 60vw;
             height: 60vw;
             background: #8b5cf6;
-            /* Purple */
             animation-delay: -2s;
         }
 
@@ -75,9 +80,8 @@
             width: 40vw;
             height: 40vw;
             background: #06b6d4;
-            /* Cyan */
-            animation-delay: -4s;
             opacity: 0.4;
+            animation-delay: -4s;
         }
 
         .blob-4 {
@@ -86,7 +90,6 @@
             width: 30vw;
             height: 30vw;
             background: #ec4899;
-            /* Pink */
             animation-delay: -6s;
         }
 
@@ -104,7 +107,6 @@
             }
         }
 
-        /* Scanline effect */
         .scanlines {
             position: absolute;
             top: 0;
@@ -120,18 +122,21 @@
 
         .container {
             text-align: center;
+            width: 90%;
             max-width: 800px;
-            padding: 2rem;
+            padding: 2.5rem 2rem;
             z-index: 10;
-            background: rgba(15, 23, 42, 0.3);
-            backdrop-filter: blur(20px);
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(24px);
             border-radius: 24px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin: 2rem 0;
         }
 
         h1 {
-            font-size: 4.5rem;
+            font-size: 4rem;
+            /* Desktop default */
             font-weight: 800;
             margin: 0;
             background: linear-gradient(to right, #22d3ee, #4ade80, #c084fc, #f472b6);
@@ -140,6 +145,7 @@
             background-clip: text;
             color: transparent;
             letter-spacing: -0.05em;
+            line-height: 1.1;
             animation: gradient-text 5s linear infinite;
         }
 
@@ -163,6 +169,7 @@
             margin-top: 0.5rem;
             margin-bottom: 2.5rem;
             font-weight: 300;
+            line-height: 1.5;
         }
 
         .features {
@@ -184,6 +191,7 @@
             align-items: center;
             gap: 0.5rem;
             transition: transform 0.2s;
+            white-space: nowrap;
         }
 
         .feature-badge:hover {
@@ -194,27 +202,33 @@
         .buttons {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.25rem;
             align-items: center;
+            width: 100%;
         }
 
         .btn-group {
             display: flex;
             gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
         }
 
         .btn {
-            padding: 1rem 2.5rem;
-            border-radius: 12px;
+            padding: 1rem 2rem;
+            border-radius: 14px;
             font-weight: 600;
             text-decoration: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 1.1rem;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            gap: 0.75rem;
             position: relative;
             overflow: hidden;
+            white-space: nowrap;
         }
 
         .btn-primary {
@@ -224,6 +238,7 @@
             box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.2);
             animation: gradient-btn 4s ease infinite;
+            min-width: 200px;
         }
 
         @keyframes gradient-btn {
@@ -250,6 +265,7 @@
             color: #e2e8f0;
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(5px);
+            min-width: 160px;
         }
 
         .btn-secondary:hover {
@@ -292,6 +308,42 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+        }
+
+        /* MOBILE RESPONSIVE STYLES */
+        @media (max-width: 768px) {
+            .container {
+                width: 85%;
+                padding: 1.5rem;
+                /* Reduced padding */
+            }
+
+            h1 {
+                font-size: 2.5rem;
+                /* Smaller title on mobile */
+            }
+
+            p.subtitle {
+                font-size: 1.1rem;
+                margin-bottom: 2rem;
+            }
+
+            .btn {
+                width: 100%;
+                /* Full width buttons on mobile */
+                box-sizing: border-box;
+            }
+
+            .btn-group {
+                flex-direction: column;
+                /* Stack secondary buttons */
+                gap: 0.75rem;
+            }
+
+            .feature-badge {
+                font-size: 0.8rem;
+                padding: 0.4rem 0.8rem;
+            }
         }
     </style>
 </head>
