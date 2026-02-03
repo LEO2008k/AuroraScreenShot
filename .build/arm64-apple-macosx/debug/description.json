@@ -1,0 +1,465 @@
+{
+  "builtTestProducts" : [
+
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.AuroraScreenshot-arm64-apple-macosx16.0-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/sources",
+      "importPath" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/AIHelper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/AuroraApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/HotKeyManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/KeyboardShortcuts.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OCRResultView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OCRService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PermissionsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PermissionsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PreferencesView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/ScreenCapture.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/SettingsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/sources"
+        }
+      ],
+      "isLibrary" : false,
+      "moduleName" : "AuroraScreenshot",
+      "moduleOutputPath" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/Modules/AuroraScreenshot.swiftmodule",
+      "objects" : [
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/AIHelper.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/AuroraApp.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/HotKeyManager.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/KeyboardShortcuts.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OCRResultView.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OCRService.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OverlayController.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OverlayView.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OverlayViewModel.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/PermissionsManager.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/PermissionsView.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/PreferencesView.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/ScreenCapture.swift.o",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/SettingsManager.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx12.0",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j14",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-Xfrontend",
+        "-entry-point-function-name",
+        "-Xfrontend",
+        "AuroraScreenshot_main",
+        "-swift-version",
+        "5",
+        "-F",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g"
+      ],
+      "outputFileMapPath" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/AIHelper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/AuroraApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/HotKeyManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/KeyboardShortcuts.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OCRResultView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OCRService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OverlayController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OverlayView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OverlayViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/PermissionsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/PermissionsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/PreferencesView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/ScreenCapture.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/SettingsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/Modules/AuroraScreenshot.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/AIHelper.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/AuroraApp.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/HotKeyManager.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/KeyboardShortcuts.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OCRResultView.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OCRService.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayController.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayView.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayViewModel.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PermissionsManager.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PermissionsView.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PreferencesView.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/ScreenCapture.swift",
+        "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/SettingsManager.swift"
+      ],
+      "tempsPath" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "AuroraScreenshot" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "AuroraScreenshot",
+      "-incremental",
+      "-c",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/AIHelper.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/AuroraApp.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/HotKeyManager.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/KeyboardShortcuts.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OCRResultView.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OCRService.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayController.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayView.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayViewModel.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PermissionsManager.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PermissionsView.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PreferencesView.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/ScreenCapture.swift",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/SettingsManager.swift",
+      "-I",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx12.0",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j14",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-Xfrontend",
+      "-entry-point-function-name",
+      "-Xfrontend",
+      "AuroraScreenshot_main",
+      "-swift-version",
+      "5",
+      "-F",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "AuroraScreenshot" : [
+
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "traitConfiguration" : {
+    "enableAllTraits" : false
+  },
+  "writeCommands" : {
+    "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot-entitlement.plist" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<entitlement-plist>"
+        },
+        {
+          "kind" : "virtual",
+          "name" : "<com.apple.security.get-task-allow>"
+        }
+      ],
+      "outputFilePath" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot-entitlement.plist"
+    },
+    "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/AIHelper.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/AuroraApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/HotKeyManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/KeyboardShortcuts.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OCRResultView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OCRService.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/OverlayViewModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PermissionsManager.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PermissionsView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/PreferencesView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/ScreenCapture.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/Sources/SettingsManager.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/sources"
+    },
+    "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/AIHelper.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/AuroraApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/HotKeyManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/KeyboardShortcuts.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OCRResultView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OCRService.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OverlayController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OverlayView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/OverlayViewModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/PermissionsManager.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/PermissionsView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/PreferencesView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/ScreenCapture.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.build/SettingsManager.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/AuroraScreenshot.product/Objects.LinkFileList"
+    },
+    "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/levkokravchuk/Documents/Pet_proj/AuroraScreenShot/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}
