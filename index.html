@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aurora Screen Shot - Next Gen Screenshot Tool</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-color: #e2e8f0;
+            --accent-primary: #8b5cf6; /* Violet */
+            --accent-secondary: #06b6d4; /* Cyan */
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 20%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 2rem;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #22d3ee, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.05em;
+            animation: aurora-text 8s infinite alternate;
+        }
+
+        p.subtitle {
+            font-size: 1.5rem;
+            color: #94a3b8;
+            margin-bottom: 3rem;
+        }
+
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            flex-wrap: wrap;
+        }
+
+        .feature-badge {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 30px -10px rgba(139, 92, 246, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--glass-bg);
+            color: var(--text-color);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .aurora-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, var(--bg-color) 100%);
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        /* Aurora Animation Canvas background would go here, simplified with CSS gradients */
+        .glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+        }
+
+        @keyframes aurora-text {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(45deg); }
+        }
+        
+        .footer {
+            margin-top: 4rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+        
+        .footer a {
+            color: #94a3b8;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow"></div>
+
+    <div class="container">
+        <h1>Aurora Screen Shot</h1>
+        <p class="subtitle">Beautiful, AI-powered screenshots for macOS.</p>
+
+        <div class="features">
+            <div class="feature-badge">✨ Aurora Effect</div>
+            <div class="feature-badge">🤖 Local AI Analysis</div>
+            <div class="feature-badge">⚡ Instant OCR</div>
+            <div class="feature-badge">🖊️ Drawing Tools</div>
+        </div>
+
+        <div class="buttons">
+            <a href="https://github.com/LEO2008k/AuroraScreenShot/releases/latest" class="btn btn-primary">
+                Download for macOS
+            </a>
+
+            <div class="btn-group">
+                <a href="#" class="btn btn-secondary">
+                    Support on Patreon
+                </a>
+                <a href="#" class="btn btn-secondary">
+                    Dev Portfolio
+                </a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built with ❤️ by <a href="#">Levko Kravchuk</a></p>
+        </div>
+    </div>
+
+</body>
+</html>
