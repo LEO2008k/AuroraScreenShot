@@ -242,34 +242,25 @@ struct AISettingsView: View {
                 }
             }
             
-            Section(header: Text("Translation Config")) {
+             Section(header: Text("Translation Config")) {
                  Text("Available Languages:")
-                 ScrollView {
-                     VStack(spacing: 5) {
-                         ForEach(languages, id: \.self) { lang in
-                             HStack {
-                                 Text(lang)
-                                 Spacer()
-                                 Button(action: {
-                                     if let idx = languages.firstIndex(of: lang) {
-                                         languages.remove(at: idx)
-                                         SettingsManager.shared.translationLanguages = languages
-                                     }
-                                 }) {
-                                     Image(systemName: "trash")
-                                         .foregroundColor(.red)
-                                 }
-                                 .buttonStyle(.plain)
+                 
+                 ForEach(languages, id: \.self) { lang in
+                     HStack {
+                         Text(lang)
+                         Spacer()
+                         Button(action: {
+                             if let idx = languages.firstIndex(of: lang) {
+                                 languages.remove(at: idx)
+                                 SettingsManager.shared.translationLanguages = languages
                              }
-                             .padding(4)
-                             .background(Color.secondary.opacity(0.1))
-                             .cornerRadius(4)
+                         }) {
+                             Image(systemName: "trash")
+                                 .foregroundColor(.red)
                          }
+                         .buttonStyle(.plain)
                      }
-                     .padding(4)
                  }
-                 .frame(height: 120)
-                 .border(Color.secondary.opacity(0.2))
                  
                  HStack {
                      TextField("Add Language (e.g. Japanese)", text: $newLanguage)
@@ -556,6 +547,9 @@ struct AboutSettingsView: View {
     @State private var autoRestart = SettingsManager.shared.autoRestartAfterUpdate
     @State private var logoRotation: Double = 0 // For animation
     
+    @State private var showUpdateAlert = false
+    @State private var updateMessage = ""
+    
     let frequencies = ["Daily", "Weekly", "Monthly"]
     
     var body: some View {
@@ -623,7 +617,12 @@ struct AboutSettingsView: View {
                 }
                 
                 Button("Check Now") {
-                    print("Checking for updates...")
+                    checkForUpdates()
+                }
+                .alert("Update Check", isPresented: $showUpdateAlert) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text(updateMessage)
                 }
                 
                 Toggle("Auto-restart after update", isOn: $autoRestart)
@@ -670,5 +669,29 @@ struct AboutSettingsView: View {
             proxyServer = SettingsManager.shared.proxyServer
             repoUrl = SettingsManager.shared.repositoryURL
         }
+    }
+    func checkForUpdates() {
+        let urlStr = repoUrl.isEmpty ? "https://raw.githubusercontent.com/LEO2008k/AuroraScreenShot/main/version.txt" : repoUrl
+        guard let url = URL(string: urlStr) else {
+            updateMessage = "Invalid URL"
+            showUpdateAlert = true
+            return
+        }
+        
+        updateMessage = "Checking \(urlStr)..."
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    updateMessage = "Error: \(error.localizedDescription)"
+                } else if let data = data, let versionStr = String(data: data, encoding: .utf8) {
+                    let cleanVer = versionStr.trimmingCharacters(in: .whitespacesAndNewlines)
+                    updateMessage = "Success! Online version: \(cleanVer)\nCurrent version: \(version) (Build \(build))"
+                } else {
+                    updateMessage = "Could not read version data."
+                }
+                showUpdateAlert = true
+            }
+        }.resume()
     }
 }
