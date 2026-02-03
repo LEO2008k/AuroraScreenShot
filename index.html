@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <!-- Security Headers -->
     <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; frame-ancestors 'none';">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
@@ -47,49 +46,143 @@
             overflow: hidden;
         }
 
-        .orb {
+        .orb-wrapper {
             position: absolute;
+            transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+            /* Smother mouse follow */
+        }
+
+        .orb {
             border-radius: 50%;
             filter: blur(80px);
             opacity: 0.6;
-            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            animation: float 20s infinite ease-in-out alternate;
         }
 
-        /* App-matching colors */
+        /* Unique Orb Definitions (Position handled by Wrapper, Color/Size/Anim by Orb) */
+
+        /* 1. Purple - Top Left */
+        .wrapper-1 {
+            top: -10%;
+            left: -10%;
+        }
+
         .orb-1 {
             width: 60vh;
             height: 60vh;
             background: var(--aurora-purple);
-            top: -10%;
-            left: -10%;
             opacity: 0.5;
+            animation-duration: 25s;
+            animation-name: float-1;
+        }
+
+        /* 2. Pink - Bottom Right */
+        .wrapper-2 {
+            bottom: -10%;
+            right: -10%;
         }
 
         .orb-2 {
             width: 50vh;
             height: 50vh;
             background: var(--aurora-pink);
-            bottom: -10%;
-            right: -10%;
             opacity: 0.5;
+            animation-duration: 22s;
+            animation-delay: -5s;
+            animation-name: float-2;
+        }
+
+        /* 3. Cyan - Middle Right */
+        .wrapper-3 {
+            top: 30%;
+            right: 20%;
         }
 
         .orb-3 {
             width: 50vh;
             height: 50vh;
             background: var(--aurora-cyan);
-            top: 30%;
-            right: 20%;
             opacity: 0.4;
+            animation-duration: 28s;
+            animation-delay: -10s;
+            animation-name: float-3;
+        }
+
+        /* 4. Green - Bottom Left */
+        .wrapper-4 {
+            bottom: 10%;
+            left: 10%;
         }
 
         .orb-4 {
             width: 40vh;
             height: 40vh;
             background: var(--aurora-green);
-            bottom: 10%;
-            left: 10%;
             opacity: 0.4;
+            animation-duration: 30s;
+            animation-delay: -2s;
+            animation-name: float-4;
+        }
+
+        /* Independent Floating Animations */
+        @keyframes float-1 {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -50px) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+        }
+
+        @keyframes float-2 {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(-40px, -20px) rotate(10deg);
+            }
+
+            100% {
+                transform: translate(20px, 40px) rotate(-5deg);
+            }
+        }
+
+        @keyframes float-3 {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(50px, 50px) scale(0.85);
+            }
+
+            100% {
+                transform: translate(-30px, -30px) scale(1.05);
+            }
+        }
+
+        @keyframes float-4 {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            50% {
+                transform: translate(20px, -60px);
+            }
+
+            100% {
+                transform: translate(-20px, 30px);
+            }
         }
 
         /* GRID OVERLAY */
@@ -113,7 +206,7 @@
             z-index: 10;
         }
 
-        /* HERO CARD */
+        /* GLASS PANEL */
         .glass-panel {
             background: rgba(22, 27, 34, 0.6);
             backdrop-filter: blur(30px);
@@ -157,7 +250,6 @@
             font-size: 5rem;
             font-weight: 800;
             margin: 0;
-            /* Matches App Gradient: Cyan -> Green -> Purple -> Pink */
             background: linear-gradient(to right, #22d3ee, #4ade80, #c084fc, #f472b6);
             -webkit-background-clip: text;
             background-clip: text;
@@ -203,7 +295,6 @@
             font-weight: 500;
         }
 
-        /* BUTTONS */
         .btn-container {
             display: flex;
             flex-direction: column;
@@ -212,7 +303,6 @@
         }
 
         .main-btn {
-            /* Aurora Gradient Button */
             background: linear-gradient(135deg, #22d3ee, #c084fc);
             color: black;
             font-size: 1.2rem;
@@ -232,7 +322,6 @@
             transform: scale(1.02);
             box-shadow: 0 6px 25px rgba(192, 132, 252, 0.6);
             color: white;
-            /* White text on hover for contrast */
         }
 
         .secondary-links {
@@ -287,7 +376,6 @@
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            /* Force 2 columns */
             gap: 2.5rem;
             margin-top: 2rem;
             margin-bottom: 3rem;
@@ -315,7 +403,6 @@
         .img-wrapper {
             width: 100%;
             height: 250px;
-            /* Slightly taller for better view */
             overflow: hidden;
             border-top-left-radius: 16px;
             border-top-right-radius: 16px;
@@ -348,16 +435,13 @@
             line-height: 1.5;
         }
 
-        /* DESIGN NOTE & FOOTER - CENTERED */
         .design-note {
             margin-top: 3rem;
             color: #8b949e;
             font-size: 1rem;
-            /* Slightly larger */
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             padding-top: 3rem;
             text-align: center;
-            /* CENTER */
             max-width: 600px;
             margin-left: auto;
             margin-right: auto;
@@ -379,7 +463,6 @@
             color: #6e7681;
             font-size: 0.9rem;
             text-align: center;
-            /* CENTER */
             padding-bottom: 2rem;
         }
 
@@ -417,7 +500,6 @@
                 grid-template-columns: 1fr;
             }
 
-            /* Stack on mobile */
             .gallery-item:hover {
                 transform: scale(1.03);
             }
@@ -432,10 +514,19 @@
 <body>
 
     <div class="aurora-bg">
-        <div class="orb orb-1"></div>
-        <div class="orb orb-2"></div>
-        <div class="orb orb-3"></div>
-        <div class="orb orb-4"></div>
+        <!-- Wrappers handle mouse follow, Orbs handle autonomous floating -->
+        <div class="orb-wrapper wrapper-1">
+            <div class="orb orb-1"></div>
+        </div>
+        <div class="orb-wrapper wrapper-2">
+            <div class="orb orb-2"></div>
+        </div>
+        <div class="orb-wrapper wrapper-3">
+            <div class="orb orb-3"></div>
+        </div>
+        <div class="orb-wrapper wrapper-4">
+            <div class="orb orb-4"></div>
+        </div>
         <div class="grid-overlay"></div>
     </div>
 
@@ -567,27 +658,27 @@
         <div class="footer">
             <p>Built with ❤️ by <a href="https://levko.kravchuk.net.ua" target="_blank">Levko Kravchuk</a></p>
             <p style="font-size: 0.85rem; opacity: 0.8;">Powered by <strong>Vibe Coding</strong></p>
-            <span class="version-tag">Site v1.2</span>
+            <span class="version-tag">Site v1.3</span>
         </div>
 
     </div>
 
-    <!-- Mouse Parallax Script -->
+    <!-- Independent Parallax Script -->
     <script>
         document.addEventListener('mousemove', (e) => {
-            const orbs = document.querySelectorAll('.orb');
+            const wrappers = document.querySelectorAll('.orb-wrapper');
             const x = e.clientX / window.innerWidth;
             const y = e.clientY / window.innerHeight;
 
-            orbs.forEach((orb, index) => {
-                // Determine movement factor based on index to create depth (parallax)
-                const factor = (index + 1) * 20;
+            wrappers.forEach((wrapper, index) => {
+                // Different speed for each orb (parallax depth)
+                // Use prime numbers or variations so they don't look synchronized
+                const speed = [30, -40, 50, -25][index % 4];
 
-                // Calculate move distance (center bias)
-                const moveX = (x - 0.5) * factor;
-                const moveY = (y - 0.5) * factor;
+                const moveX = (x - 0.5) * speed;
+                const moveY = (y - 0.5) * speed;
 
-                orb.style.transform = `translate(${moveX}px, ${moveY}px)`;
+                wrapper.style.transform = `translate(${moveX}px, ${moveY}px)`;
             });
         });
     </script>
