@@ -642,14 +642,13 @@ struct AboutSettingsView: View {
                         SettingsManager.shared.autoRestartAfterUpdate = newValue
                     }
                 
-                TextField("Repository/Update URL", text: $repoUrl)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onChange(of: repoUrl) { newValue in
-                        SettingsManager.shared.repositoryURL = newValue
-                    }
-                Text("For 'new-features' branch, use raw version.txt link.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                
+                HStack {
+                    Text("Update Source:")
+                    Text("Official Repository (LEO2008k)")
+                        .foregroundColor(.secondary)
+                }
+                .font(.caption)
             }
             
             Section(header: Text("Network")) {
@@ -685,8 +684,8 @@ struct AboutSettingsView: View {
     @State private var newVersionAvailable: String? = nil
 
     func checkForUpdates() {
-        let defaultUrl = "https://raw.githubusercontent.com/LEO2008k/AuroraScreenShot/new-features/version.txt"
-        let urlStr = repoUrl.isEmpty ? defaultUrl : repoUrl
+        // Hardcoded URL for official updates
+        let urlStr = "https://raw.githubusercontent.com/LEO2008k/AuroraScreenShot/new-features/version.txt"
         
         guard let url = URL(string: urlStr) else {
             updateMessage = "Invalid URL"
