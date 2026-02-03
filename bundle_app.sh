@@ -2,7 +2,8 @@
 # This program was developed by Levko Kravchuk with the help of Vibe Coding
 
 APP_NAME="AuroraScreenshot"
-BUILD_DIR=".build/arm64-apple-macosx/debug"
+# CHANGED: Use Release folder
+BUILD_DIR=".build/arm64-apple-macosx/release"
 APP_DIR="$APP_NAME.app"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
@@ -35,8 +36,9 @@ echo $BUILD_NUM > build.txt
 echo "Building Version: $SEM_VER (Build $BUILD_NUM)"
 
 # Build the project first
-echo "Building project..."
-swift build
+echo "Building project (Release)..."
+# CHANGED: Release flag
+swift build -c release
 
 # Create directories
 mkdir -p "$MACOS_DIR"
@@ -57,12 +59,9 @@ if [ -f "$ICON_SOURCE" ]; then
     sips -z 128 128   "$ICON_SOURCE" --setProperty format png --out "$ICONSET_DIR/icon_128x128.png" > /dev/null
     sips -z 256 256   "$ICON_SOURCE" --setProperty format png --out "$ICONSET_DIR/icon_128x128@2x.png" > /dev/null
     sips -z 256 256   "$ICON_SOURCE" --setProperty format png --out "$ICONSET_DIR/icon_256x256.png" > /dev/null
-    sips -z 512 512   "$ICON_SOURCE" --setProperty format png --out "$ICONSET_DIR/icon_256x256@2x.png" > /dev/null
     sips -z 512 512   "$ICON_SOURCE" --setProperty format png --out "$ICONSET_DIR/icon_512x512.png" > /dev/null
+    sips -z 512 512   "$ICON_SOURCE" --setProperty format png --out "$ICONSET_DIR/icon_512x512@2x.png" > /dev/null
     sips -z 1024 1024 "$ICON_SOURCE" --setProperty format png --out "$ICONSET_DIR/icon_512x512@2x.png" > /dev/null
-    
-    # Debug: Check if files exist
-    # ls -l "$ICONSET_DIR"
     
     iconutil -c icns "$ICONSET_DIR" -o "$RESOURCES_DIR/AppIcon.icns" || echo "Iconutil failed"
     rm -rf "$ICONSET_DIR"

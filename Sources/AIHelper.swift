@@ -1,5 +1,6 @@
 // This program was developed by Levko Kravchuk with the help of Vibe Coding
 import Cocoa
+import Vision
 
 struct AIHelper {
     static let shared = AIHelper()
@@ -236,5 +237,31 @@ struct AIHelper {
                 completion(.failure(error))
             }
         }.resume()
+    }
+    func recognizeText(from image: CGImage) -> String {
+        var recognizedText = ""
+        
+        let request = VNRecognizeTextRequest { request, error in
+            guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
+            
+            let fullText = observations.compactMap { observation in
+                observation.topCandidates(1).first?.string
+            }.joined(separator: "\n")
+            
+            recognizedText = fullText
+        }
+        
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        
+        let handler = VNImageRequestHandler(cgImage: image, options: [:])
+        try? handler.perform([request])
+        
+        // Basic fallback if Vision fails or returns empty (should rarely happen on standard macOS)
+        if recognizedText.isEmpty {
+             return "No text detected."
+        }
+        
+        return recognizedText
     }
 }
