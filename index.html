@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +9,10 @@
         :root {
             --bg-color: #0f172a;
             --text-color: #e2e8f0;
-            --accent-primary: #8b5cf6; /* Violet */
-            --accent-secondary: #06b6d4; /* Cyan */
+            --accent-primary: #8b5cf6;
+            /* Violet */
+            --accent-secondary: #06b6d4;
+            /* Cyan */
             --glass-bg: rgba(30, 41, 59, 0.7);
             --glass-border: rgba(255, 255, 255, 0.1);
         }
@@ -19,7 +22,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            background-image: 
+            background-image:
                 radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 20%),
                 radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 20%);
             height: 100vh;
@@ -79,7 +82,7 @@
             gap: 1rem;
             align-items: center;
         }
-        
+
         .btn-group {
             display: flex;
             gap: 1rem;
@@ -129,13 +132,13 @@
             z-index: 1;
             pointer-events: none;
         }
-        
+
         /* Aurora Animation Canvas background would go here, simplified with CSS gradients */
         .glow {
             position: absolute;
             width: 600px;
             height: 600px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0,0,0,0) 70%);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -143,22 +146,28 @@
         }
 
         @keyframes aurora-text {
-            0% { filter: hue-rotate(0deg); }
-            100% { filter: hue-rotate(45deg); }
+            0% {
+                filter: hue-rotate(0deg);
+            }
+
+            100% {
+                filter: hue-rotate(45deg);
+            }
         }
-        
+
         .footer {
             margin-top: 4rem;
             font-size: 0.9rem;
             color: #64748b;
         }
-        
+
         .footer a {
             color: #94a3b8;
             text-decoration: none;
         }
     </style>
 </head>
+
 <body>
 
     <div class="glow"></div>
@@ -180,10 +189,11 @@
             </a>
 
             <div class="btn-group">
-                <a href="#" class="btn btn-secondary">
+                <a href="https://www.patreon.com/posts/meet-aurora-shot-149870544?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=postshare_creator&utm_content=join_link"
+                    class="btn btn-secondary" target="_blank">
                     Support on Patreon
                 </a>
-                <a href="#" class="btn btn-secondary">
+                <a href="https://levko.kravchuk.net.ua" class="btn btn-secondary" target="_blank">
                     Dev Portfolio
                 </a>
             </div>
@@ -195,4 +205,5 @@
     </div>
 
 </body>
+
 </html>
