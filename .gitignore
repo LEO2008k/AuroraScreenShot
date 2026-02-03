@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+*.swp
+*~
+
+# Xcode / Swift
+.build/
+DerivedData/
+*.xcuserstate
+*.xcworkspace
+xcuserdata/
+
+# Build artifacts
+AuroraScreenshot.app/
+*.dmg
+dmg_staging/
+
+# Credentials / Secrets (NEVER commit these)
+*.pem
+*.p12
+*.key
+secrets.json
+credentials.json
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# Logs
+*.log
