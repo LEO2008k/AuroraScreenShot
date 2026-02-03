@@ -10,9 +10,7 @@
             --bg-color: #0f172a;
             --text-color: #e2e8f0;
             --accent-primary: #8b5cf6;
-            /* Violet */
             --accent-secondary: #06b6d4;
-            /* Cyan */
             --glass-bg: rgba(30, 41, 59, 0.7);
             --glass-border: rgba(255, 255, 255, 0.1);
         }
@@ -22,15 +20,102 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            background-image:
-                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 20%),
-                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 20%);
             height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            position: relative;
+        }
+
+        /* AURORA BACKGROUND ANIMATION */
+        .aurora-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .aurora-blob {
+            position: absolute;
+            filter: blur(80px);
+            opacity: 0.6;
+            border-radius: 50%;
+            animation: float 10s infinite alternate cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+
+        .blob-1 {
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: #4ade80;
+            /* Green */
+            animation-delay: 0s;
+        }
+
+        .blob-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 60vw;
+            height: 60vw;
+            background: #8b5cf6;
+            /* Purple */
+            animation-delay: -2s;
+        }
+
+        .blob-3 {
+            top: 40%;
+            left: 40%;
+            width: 40vw;
+            height: 40vw;
+            background: #06b6d4;
+            /* Cyan */
+            animation-delay: -4s;
+            opacity: 0.4;
+        }
+
+        .blob-4 {
+            bottom: 10%;
+            left: 10%;
+            width: 30vw;
+            height: 30vw;
+            background: #ec4899;
+            /* Pink */
+            animation-delay: -6s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+
+            100% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+        }
+
+        /* Scanline effect */
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.1) 50%, rgba(0, 0, 0, 0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.3;
         }
 
         .container {
@@ -38,42 +123,72 @@
             max-width: 800px;
             padding: 2rem;
             z-index: 10;
+            background: rgba(15, 23, 42, 0.3);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
         h1 {
-            font-size: 4rem;
+            font-size: 4.5rem;
             font-weight: 800;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(to right, #22d3ee, #c084fc, #f472b6);
+            margin: 0;
+            background: linear-gradient(to right, #22d3ee, #4ade80, #c084fc, #f472b6);
+            background-size: 200% auto;
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             letter-spacing: -0.05em;
-            animation: aurora-text 8s infinite alternate;
+            animation: gradient-text 5s linear infinite;
+        }
+
+        @keyframes gradient-text {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
         }
 
         p.subtitle {
             font-size: 1.5rem;
-            color: #94a3b8;
-            margin-bottom: 3rem;
+            color: #cbd5e1;
+            margin-top: 0.5rem;
+            margin-bottom: 2.5rem;
+            font-weight: 300;
         }
 
         .features {
             display: flex;
             justify-content: center;
-            gap: 1.5rem;
-            margin-bottom: 3rem;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
             flex-wrap: wrap;
         }
 
         .feature-badge {
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 0.5rem 1rem;
             border-radius: 99px;
             font-size: 0.9rem;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: transform 0.2s;
+        }
+
+        .feature-badge:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
         }
 
         .buttons {
@@ -89,118 +204,155 @@
         }
 
         .btn {
-            padding: 1rem 2rem;
+            padding: 1rem 2.5rem;
             border-radius: 12px;
             font-weight: 600;
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-size: 1.1rem;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+            background-size: 200% 200%;
             color: white;
-            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4);
+            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: gradient-btn 4s ease infinite;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 30px -10px rgba(139, 92, 246, 0.5);
-        }
-
-        .btn-secondary {
-            background: var(--glass-bg);
-            color: var(--text-color);
-            border: 1px solid var(--glass-border);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .aurora-bg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 60%;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0) 0%, var(--bg-color) 100%);
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        /* Aurora Animation Canvas background would go here, simplified with CSS gradients */
-        .glow {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(0, 0, 0, 0) 70%);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 0;
-        }
-
-        @keyframes aurora-text {
+        @keyframes gradient-btn {
             0% {
-                filter: hue-rotate(0deg);
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
             }
 
             100% {
-                filter: hue-rotate(45deg);
+                background-position: 0% 50%;
             }
         }
 
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 35px -10px rgba(139, 92, 246, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: #e2e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
         .footer {
-            margin-top: 4rem;
+            margin-top: 3.5rem;
             font-size: 0.9rem;
-            color: #64748b;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .footer p {
+            margin: 0.2rem 0;
         }
 
         .footer a {
-            color: #94a3b8;
+            color: #38bdf8;
             text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .footer a:hover {
+            color: #7dd3fc;
+            text-decoration: underline;
+        }
+
+        .vibe {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+
+        .vibe strong {
+            background: linear-gradient(to right, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="glow"></div>
+    <div class="aurora-container">
+        <div class="aurora-blob blob-1"></div>
+        <div class="aurora-blob blob-2"></div>
+        <div class="aurora-blob blob-3"></div>
+        <div class="aurora-blob blob-4"></div>
+        <div class="scanlines"></div>
+    </div>
 
     <div class="container">
         <h1>Aurora Screen Shot</h1>
-        <p class="subtitle">Beautiful, AI-powered screenshots for macOS.</p>
+        <p class="subtitle">Next-generation, AI-powered screenshot tool for macOS.</p>
 
         <div class="features">
             <div class="feature-badge">✨ Aurora Effect</div>
             <div class="feature-badge">🤖 Local AI Analysis</div>
             <div class="feature-badge">⚡ Instant OCR</div>
-            <div class="feature-badge">🖊️ Drawing Tools</div>
+            <div class="feature-badge">🖊️ Pro Drawing</div>
         </div>
 
         <div class="buttons">
             <a href="https://github.com/LEO2008k/AuroraScreenShot/releases/latest" class="btn btn-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
                 Download for macOS
             </a>
 
             <div class="btn-group">
                 <a href="https://www.patreon.com/posts/meet-aurora-shot-149870544?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=postshare_creator&utm_content=join_link"
                     class="btn btn-secondary" target="_blank">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
                     Support on Patreon
                 </a>
                 <a href="https://levko.kravchuk.net.ua" class="btn btn-secondary" target="_blank">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
                     Dev Portfolio
                 </a>
             </div>
         </div>
 
         <div class="footer">
-            <p>Built with ❤️ by <a href="#">Levko Kravchuk</a></p>
+            <p>Built with ❤️ by <a href="https://levko.kravchuk.net.ua" target="_blank">Levko Kravchuk</a></p>
+            <p class="vibe">Powered by <strong>Vibe Coding</strong></p>
         </div>
     </div>
 
