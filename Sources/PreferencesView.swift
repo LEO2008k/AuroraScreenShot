@@ -616,11 +616,23 @@ struct AboutSettingsView: View {
                     SettingsManager.shared.updateFrequency = newValue
                 }
                 
-                Button("Check Now") {
+                Button("Check for Updates") {
                     checkForUpdates()
                 }
-                .alert("Update Check", isPresented: $showUpdateAlert) {
-                    Button("OK", role: .cancel) { }
+                .alert("Update Available", isPresented: $showUpdateAlert) {
+                     if let newVer = newVersionAvailable {
+                         Button("Download & Install", role: .none) {
+                             downloadAndInstall(version: newVer)
+                         }
+                         Button("View Changelog", role: .none) {
+                             if let url = URL(string: "https://github.com/LEO2008k/AuroraScreenShot/tree/production") {
+                                 NSWorkspace.shared.open(url)
+                             }
+                         }
+                         Button("Cancel", role: .cancel) { }
+                     } else {
+                         Button("OK", role: .cancel) { }
+                     }
                 } message: {
                     Text(updateMessage)
                 }
@@ -670,28 +682,85 @@ struct AboutSettingsView: View {
             repoUrl = SettingsManager.shared.repositoryURL
         }
     }
+    @State private var newVersionAvailable: String? = nil
+
     func checkForUpdates() {
-        let urlStr = repoUrl.isEmpty ? "https://raw.githubusercontent.com/LEO2008k/AuroraScreenShot/main/version.txt" : repoUrl
+        let defaultUrl = "https://raw.githubusercontent.com/LEO2008k/AuroraScreenShot/new-features/version.txt"
+        let urlStr = repoUrl.isEmpty ? defaultUrl : repoUrl
+        
         guard let url = URL(string: urlStr) else {
             updateMessage = "Invalid URL"
             showUpdateAlert = true
             return
         }
         
-        updateMessage = "Checking \(urlStr)..."
+        updateMessage = "Checking for updates..."
+        newVersionAvailable = nil
         
         URLSession.shared.dataTask(with: url) { data, response, error in
             DispatchQueue.main.async {
                 if let error = error {
                     updateMessage = "Error: \(error.localizedDescription)"
-                } else if let data = data, let versionStr = String(data: data, encoding: .utf8) {
-                    let cleanVer = versionStr.trimmingCharacters(in: .whitespacesAndNewlines)
-                    updateMessage = "Success! Online version: \(cleanVer)\nCurrent version: \(version) (Build \(build))"
-                } else {
+                    showUpdateAlert = true
+                    return
+                }
+                
+                guard let data = data, let versionStr = String(data: data, encoding: .utf8) else {
                     updateMessage = "Could not read version data."
+                    showUpdateAlert = true
+                    return
+                }
+                
+                let onlineVer = versionStr.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                // Check if response is HTML error (like 404)
+                if onlineVer.contains("<html>") || onlineVer.contains("404") {
+                     updateMessage = "Error: Version file not found on server (404)."
+                     showUpdateAlert = true
+                     return
+                }
+                
+                let cleanOnline = onlineVer.replacingOccurrences(of: "v", with: "")
+                
+                if isNewer(online: cleanOnline, current: version) {
+                    newVersionAvailable = cleanOnline
+                    updateMessage = "🚀 New version found: v\(cleanOnline)!\nCurrent: v\(version).\n\nWould you like to install it?"
+                } else if cleanOnline == version {
+                    updateMessage = "You have the latest version (v\(version))."
+                } else {
+                    updateMessage = "You are using a newer version than the release channel.\n(Local: v\(version), Online: v\(cleanOnline))"
                 }
                 showUpdateAlert = true
             }
         }.resume()
+    }
+    
+    func isNewer(online: String, current: String) -> Bool {
+        let cleanOnline = online.replacingOccurrences(of: "v", with: "")
+        let cleanCurrent = current.replacingOccurrences(of: "v", with: "")
+        return cleanOnline.compare(cleanCurrent, options: .numeric) == .orderedDescending
+    }
+    
+    func downloadAndInstall(version: String) {
+        // format: https://github.com/LEO2008k/AuroraScreenShot/releases/download/v2.0.45/AuroraScreenshot_Installer.dmg
+        let downloadUrlStr = "https://github.com/LEO2008k/AuroraScreenShot/releases/download/v\(version)/AuroraScreenshot_Installer.dmg"
+        
+        guard let url = URL(string: downloadUrlStr) else { return }
+        
+        NSWorkspace.shared.open(url) // Open browser to download .dmg
+        
+        // Helper logic: If we want to actually download and mount, we need substantial file handling code.
+        // For safety and reliability, opening the direct download link is best.
+        // It will download to Downloads folder.
+        
+        // Notify user
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            let alert = NSAlert()
+            alert.messageText = "Downloading Update..."
+            alert.informativeText = "The installer is downloading.\nPlease open the DMG and drag the app to Applications folder to update.\n\nThe app will quit now."
+            alert.addButton(withTitle: "Quit & Install")
+            alert.runModal()
+            NSApp.terminate(nil)
+        }
     }
 }
