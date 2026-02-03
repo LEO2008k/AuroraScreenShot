@@ -16,7 +16,10 @@
         :root {
             --bg-color: #0d1117;
             --text-color: #e6edf3;
-            --accent-glow: linear-gradient(135deg, #FF61D2 0%, #FE9090 100%);
+            --aurora-cyan: #22d3ee;
+            --aurora-green: #4ade80;
+            --aurora-purple: #c084fc;
+            --aurora-pink: #f472b6;
         }
 
         body {
@@ -48,49 +51,45 @@
             position: absolute;
             border-radius: 50%;
             filter: blur(80px);
-            opacity: 0.5;
-            animation: moveOrb 20s infinite alternate ease-in-out;
+            opacity: 0.6;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
+        /* App-matching colors */
         .orb-1 {
             width: 60vh;
             height: 60vh;
-            background: #6228d7;
+            background: var(--aurora-purple);
             top: -10%;
             left: -10%;
-            animation-delay: 0s;
+            opacity: 0.5;
         }
 
         .orb-2 {
             width: 50vh;
             height: 50vh;
-            background: #ee2a7b;
+            background: var(--aurora-pink);
             bottom: -10%;
             right: -10%;
-            animation-delay: -5s;
+            opacity: 0.5;
         }
 
         .orb-3 {
-            width: 40vh;
-            height: 40vh;
-            background: #00c6ff;
-            top: 40%;
+            width: 50vh;
+            height: 50vh;
+            background: var(--aurora-cyan);
+            top: 30%;
             right: 20%;
-            animation-delay: -10s;
+            opacity: 0.4;
         }
 
-        @keyframes moveOrb {
-            0% {
-                transform: translate(0, 0) scale(1);
-            }
-
-            50% {
-                transform: translate(30px, -50px) scale(1.1) rotate(20deg);
-            }
-
-            100% {
-                transform: translate(-30px, 30px) scale(0.9) rotate(-10deg);
-            }
+        .orb-4 {
+            width: 40vh;
+            height: 40vh;
+            background: var(--aurora-green);
+            bottom: 10%;
+            left: 10%;
+            opacity: 0.4;
         }
 
         /* GRID OVERLAY */
@@ -104,7 +103,7 @@
                 linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 40px 40px;
             pointer-events: none;
-            z-index: -1;
+            z-index: 0;
         }
 
         .container {
@@ -114,11 +113,11 @@
             z-index: 10;
         }
 
-        /* LIQUID GLASS CARD */
+        /* HERO CARD */
         .glass-panel {
             background: rgba(22, 27, 34, 0.6);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -129,7 +128,6 @@
             margin-bottom: 4rem;
         }
 
-        /* Shine effect on card */
         .glass-panel::before {
             content: '';
             position: absolute;
@@ -159,13 +157,25 @@
             font-size: 5rem;
             font-weight: 800;
             margin: 0;
-            background: linear-gradient(to right, #00c6ff, #0072ff, #92fe9d);
+            /* Matches App Gradient: Cyan -> Green -> Purple -> Pink */
+            background: linear-gradient(to right, #22d3ee, #4ade80, #c084fc, #f472b6);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
             letter-spacing: -0.03em;
             line-height: 1.1;
             margin-bottom: 0.5rem;
+            animation: hue-rotate 10s infinite linear;
+        }
+
+        @keyframes hue-rotate {
+            from {
+                filter: hue-rotate(0deg);
+            }
+
+            to {
+                filter: hue-rotate(360deg);
+            }
         }
 
         p.subtitle {
@@ -184,9 +194,9 @@
         }
 
         .badge {
-            background: rgba(56, 139, 253, 0.15);
-            color: #58a6ff;
-            border: 1px solid rgba(56, 139, 253, 0.4);
+            background: rgba(192, 132, 252, 0.1);
+            color: #c084fc;
+            border: 1px solid rgba(192, 132, 252, 0.3);
             padding: 0.4rem 1rem;
             border-radius: 99px;
             font-size: 0.9rem;
@@ -202,16 +212,17 @@
         }
 
         .main-btn {
-            background: linear-gradient(90deg, #238636, #2ea043);
-            color: white;
+            /* Aurora Gradient Button */
+            background: linear-gradient(135deg, #22d3ee, #c084fc);
+            color: black;
             font-size: 1.2rem;
-            font-weight: 600;
+            font-weight: 700;
             padding: 1rem 3rem;
             border-radius: 12px;
             text-decoration: none;
-            box-shadow: 0 4px 14px rgba(46, 160, 67, 0.4);
+            box-shadow: 0 4px 14px rgba(192, 132, 252, 0.4);
             transition: all 0.2s;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
@@ -219,7 +230,9 @@
 
         .main-btn:hover {
             transform: scale(1.02);
-            box-shadow: 0 6px 20px rgba(46, 160, 67, 0.6);
+            box-shadow: 0 6px 25px rgba(192, 132, 252, 0.6);
+            color: white;
+            /* White text on hover for contrast */
         }
 
         .secondary-links {
@@ -249,133 +262,6 @@
             color: white;
         }
 
-        /* GALLERY - LIQUID GLASS & ZOOM */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 2.5rem;
-            margin-top: 2rem;
-        }
-
-        .gallery-item {
-            background: rgba(22, 27, 34, 0.7);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            /* White clear border */
-            border-radius: 16px;
-            overflow: visible;
-            /* Prepare for zoom overflow */
-            position: relative;
-            transition: transform 0.3s ease, z-index 0s 0.3s;
-            /* Delay z-index reset */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(10px);
-        }
-
-        /* THE ZOOM EFFECT */
-        .gallery-item:hover {
-            transform: scale(1.15);
-            /* Make it BIGGER */
-            z-index: 100;
-            /* Float above everything */
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-            border-color: rgba(255, 255, 255, 0.3);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), z-index 0s 0s;
-            /* Z-index instant on hover */
-        }
-
-        .img-wrapper {
-            width: 100%;
-            height: 220px;
-            overflow: hidden;
-            border-top-left-radius: 16px;
-            border-top-right-radius: 16px;
-            background: #000;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: top center;
-        }
-
-        .gallery-item:hover img {
-            /* object-fit: contain;  Optional: switch to contain to see full image? No, might jump. */
-        }
-
-        .caption {
-            padding: 1.5rem;
-            text-align: left;
-        }
-
-        .caption h3 {
-            margin: 0 0 0.5rem 0;
-            color: #fff;
-            font-size: 1.1rem;
-        }
-
-        .caption p {
-            margin: 0;
-            font-size: 0.9rem;
-            color: #8b949e;
-            line-height: 1.5;
-        }
-
-        .design-note {
-            margin-top: 3rem;
-            color: #8b949e;
-            font-size: 0.9rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 2rem;
-        }
-
-        .liquid-pill {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 0.2rem 0.8rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: #a5d6ff;
-            margin-bottom: 0.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .footer {
-            margin-top: 5rem;
-            color: #6e7681;
-            font-size: 0.9rem;
-        }
-
-        .footer a {
-            color: #58a6ff;
-            text-decoration: none;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 3rem;
-            }
-
-            .glass-panel {
-                padding: 2rem 1rem;
-            }
-
-            .gallery-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .gallery-item:hover {
-                transform: scale(1.05);
-            }
-
-            /* Less zoom on mobile */
-        }
-
         .platforms-tbd {
             display: flex;
             gap: 1rem;
@@ -396,6 +282,150 @@
             border-radius: 6px;
             cursor: default;
         }
+
+        /* GALLERY - 2x2 Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            /* Force 2 columns */
+            gap: 2.5rem;
+            margin-top: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .gallery-item {
+            background: rgba(22, 27, 34, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            overflow: visible;
+            position: relative;
+            transition: transform 0.3s ease, z-index 0s 0.3s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.15);
+            z-index: 100;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+            border-color: rgba(255, 255, 255, 0.3);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), z-index 0s 0s;
+        }
+
+        .img-wrapper {
+            width: 100%;
+            height: 250px;
+            /* Slightly taller for better view */
+            overflow: hidden;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            background: #000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+        }
+
+        .caption {
+            padding: 1.5rem;
+            text-align: left;
+        }
+
+        .caption h3 {
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+            font-size: 1.1rem;
+        }
+
+        .caption p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #8b949e;
+            line-height: 1.5;
+        }
+
+        /* DESIGN NOTE & FOOTER - CENTERED */
+        .design-note {
+            margin-top: 3rem;
+            color: #8b949e;
+            font-size: 1rem;
+            /* Slightly larger */
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 3rem;
+            text-align: center;
+            /* CENTER */
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .liquid-pill {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #a5d6ff;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .footer {
+            margin-top: 2rem;
+            color: #6e7681;
+            font-size: 0.9rem;
+            text-align: center;
+            /* CENTER */
+            padding-bottom: 2rem;
+        }
+
+        .footer p {
+            margin: 0.4rem 0;
+        }
+
+        .footer a {
+            color: #58a6ff;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .version-tag {
+            font-family: monospace;
+            font-size: 0.75rem;
+            opacity: 0.5;
+            margin-top: 1rem;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 3rem;
+            }
+
+            .glass-panel {
+                padding: 2rem 1rem;
+            }
+
+            .gallery-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* Stack on mobile */
+            .gallery-item:hover {
+                transform: scale(1.03);
+            }
+
+            .design-note {
+                padding: 2rem 1rem;
+            }
+        }
     </style>
 </head>
 
@@ -405,6 +435,7 @@
         <div class="orb orb-1"></div>
         <div class="orb orb-2"></div>
         <div class="orb orb-3"></div>
+        <div class="orb orb-4"></div>
         <div class="grid-overlay"></div>
     </div>
 
@@ -431,7 +462,6 @@
                     </svg>
                     Download for macOS
                 </a>
-
 
                 <div class="platforms-tbd">
                     <span class="platform-badge" title="Coming Soon">
@@ -474,10 +504,10 @@
             </div>
         </div>
 
-        <!-- GALLERY -->
+        <!-- GALLERY (2x2) -->
         <div class="gallery-grid">
 
-            <!-- Item 1: Selection -->
+            <!-- 1 -->
             <div class="gallery-item">
                 <div class="img-wrapper">
                     <img src="images/screenshot-select.png" alt="Aurora Selection">
@@ -489,7 +519,7 @@
                 </div>
             </div>
 
-            <!-- Item 2: Secure Redact -->
+            <!-- 2 -->
             <div class="gallery-item">
                 <div class="img-wrapper">
                     <img src="images/screenshot-redact.png" alt="Redact Tool">
@@ -501,7 +531,7 @@
                 </div>
             </div>
 
-            <!-- Item 3: OCR -->
+            <!-- 3 -->
             <div class="gallery-item">
                 <div class="img-wrapper">
                     <img src="images/screenshot-ocr.png" alt="Instant OCR">
@@ -513,7 +543,7 @@
                 </div>
             </div>
 
-            <!-- Item 4: AI Settings (NEW) -->
+            <!-- 4 -->
             <div class="gallery-item">
                 <div class="img-wrapper">
                     <img src="images/screenshot-settings.png" alt="AI Settings">
@@ -521,24 +551,46 @@
                 <div class="caption">
                     <h3>Local AI Power</h3>
                     <p>Connect to local LLMs via Ollama. Analyze images and translate text securely without data leaving
-                        your Mac.</p>
+                        your Mac. <strong>Privacy First.</strong></p>
                 </div>
             </div>
 
         </div>
 
+        <!-- CENTERED DESIGN NOTE -->
         <div class="design-note">
             <p>Designed with the <strong>Liquid Glass</strong> philosophy — fluid animations, translucent layers, and
                 depth.</p>
         </div>
 
+        <!-- CENTERED FOOTER -->
         <div class="footer">
             <p>Built with ❤️ by <a href="https://levko.kravchuk.net.ua" target="_blank">Levko Kravchuk</a></p>
-            <p style="font-size: 0.8rem; opacity: 0.7;">Powered by <strong>Vibe Coding</strong></p>
+            <p style="font-size: 0.85rem; opacity: 0.8;">Powered by <strong>Vibe Coding</strong></p>
+            <span class="version-tag">Site v1.2</span>
         </div>
 
     </div>
 
+    <!-- Mouse Parallax Script -->
+    <script>
+        document.addEventListener('mousemove', (e) => {
+            const orbs = document.querySelectorAll('.orb');
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+
+            orbs.forEach((orb, index) => {
+                // Determine movement factor based on index to create depth (parallax)
+                const factor = (index + 1) * 20;
+
+                // Calculate move distance (center bias)
+                const moveX = (x - 0.5) * factor;
+                const moveY = (y - 0.5) * factor;
+
+                orb.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        });
+    </script>
 </body>
 
 </html>
