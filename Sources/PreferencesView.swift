@@ -669,6 +669,10 @@ struct AboutSettingsView: View {
                     Link("levko.kravchuk.net.ua", destination: URL(string: "https://levko.kravchuk.net.ua")!)
                         .font(.caption)
                     
+                    Link("Support on Patreon", destination: URL(string: "https://www.patreon.com/posts/meet-aurora-shot-149870544")!)
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                    
                     Text("Powered by **Vibe Coding**")
                         .foregroundColor(.secondary)
                 }
