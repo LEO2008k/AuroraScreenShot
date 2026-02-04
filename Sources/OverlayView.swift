@@ -587,8 +587,43 @@ struct OverlayView: View {
     func printImage(geometry: GeometryProxy) {
         guard let cropped = getCroppedImage(geometry: geometry) else { return }
         let nsImage = NSImage(cgImage: cropped, size: NSSize(width: cropped.width, height: cropped.height))
-        let iv = NSImageView(frame: NSRect(x:0,y:0,width:cropped.width,height:cropped.height)); iv.image = nsImage
-        let op = NSPrintOperation(view: iv); op.run()
+        
+        let printInfo = NSPrintInfo.shared
+        printInfo.horizontalPagination = .clip // Don't scatter across pages
+        printInfo.verticalPagination = .clip
+        printInfo.isHorizontallyCentered = true
+        printInfo.isVerticallyCentered = true
+        
+        // Logic to fit to page
+        let paperSize = printInfo.paperSize
+        let printArea = printInfo.imageablePageBounds
+        
+        // Use printArea if available, otherwise paperSize with margins
+        let pageW = printArea.width > 0 ? printArea.width : paperSize.width - 40
+        let pageH = printArea.height > 0 ? printArea.height : paperSize.height - 40
+        
+        let contentW = CGFloat(cropped.width)
+        let contentH = CGFloat(cropped.height)
+        
+        // Calculate scale needed to fit
+        let scaleX = pageW / contentW
+        let scaleY = pageH / contentH
+        let scale = min(scaleX, scaleY) // Fit completely
+        
+        // If image is bigger than page, scale down. If smaller, keep 1.0 (or scale up if you want)
+        // Usually for screenshots we want to see them clearly, so let's allow scale up if it's tiny, 
+        // but mostly we care about scaling down 5K screenshots.
+        printInfo.scalingFactor = scale
+        
+        let imageView = NSImageView(frame: NSRect(x: 0, y: 0, width: contentW, height: contentH))
+        imageView.image = nsImage
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        
+        let op = NSPrintOperation(view: imageView, printInfo: printInfo)
+        op.showsPrintPanel = true
+        op.showsProgressPanel = true
+        
+        op.run()
         onClose()
     }
     func openSettings() {
