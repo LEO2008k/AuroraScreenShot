@@ -571,7 +571,48 @@ struct AboutSettingsView: View {
     
     @State private var showUpdateAlert = false
     @State private var updateMessage = ""
-...
+    
+    let frequencies = ["Daily", "Weekly", "Monthly"]
+    
+    var body: some View {
+        Form {
+            Section {
+                HStack(spacing: 15) {
+                    if let icon = NSImage(named: NSImage.applicationIconName) {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .frame(width: 64, height: 64)
+                    } else {
+                        Image(systemName: "text.viewfinder")
+                            .font(.system(size: 64))
+                            .foregroundColor(.accentColor)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        AnimatedLogoText() // Moved to separate view for reliable animation
+                        
+                        Text("Version \(version) (Build \(build))")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(
+                            LinearGradient(
+                                colors: [.cyan.opacity(0.5), .purple.opacity(0.5), .pink.opacity(0.5)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 2
+                        )
+                )
+                .padding(.horizontal, 8)
+            }
+            
             Section(header: Text("Updates")) {
                 Toggle("Automatically check for updates", isOn: $autoCheckUpdates)
                     .onChange(of: autoCheckUpdates) { newValue in
@@ -579,11 +620,135 @@ struct AboutSettingsView: View {
                     }
 
                 Picker("Check for updates:", selection: $updateFrequency) {
-...
+                    ForEach(frequencies, id: \.self) { freq in
+                        Text(freq)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .onChange(of: updateFrequency) { newValue in
+                    SettingsManager.shared.updateFrequency = newValue
+                }
+                
                 Button("Check for Updates") {
                     checkForUpdates(silent: false)
                 }
-...
+                .alert("Update Available", isPresented: $showUpdateAlert) {
+                     if let newVer = newVersionAvailable {
+                         Button("Download & Install", role: .none) {
+                             downloadAndInstall(version: newVer)
+                         }
+                         Button("View Changelog", role: .none) {
+                             if let url = URL(string: "https://github.com/LEO2008k/AuroraScreenShot/tree/production") {
+                                 NSWorkspace.shared.open(url)
+                             }
+                         }
+                         Button("Cancel", role: .cancel) { }
+                     } else {
+                         Button("OK", role: .cancel) { }
+                     }
+                } message: {
+                    Text(updateMessage)
+                }
+                
+                Toggle("Auto-restart after update", isOn: $autoRestart)
+                    .onChange(of: autoRestart) { newValue in
+                        SettingsManager.shared.autoRestartAfterUpdate = newValue
+                    }
+                
+                HStack {
+                    Text("Update Source:")
+                    Text("Official Repository (LEO2008k)")
+                        .foregroundColor(.secondary)
+                }
+                .font(.caption)
+            }
+            
+            Section(header: Text("Network")) {
+                TextField("Proxy Server (http://...)", text: $proxyServer)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onChange(of: proxyServer) { newValue in
+                        SettingsManager.shared.proxyServer = newValue
+                    }
+                Text("Leave empty to use system settings")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Section(header: Text("Credits & Support")) {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Developed by **Levko Kravchuk**")
+                    
+                    // Styled Link Buttons
+                    HStack(spacing: 12) {
+                        Link(destination: URL(string: "https://levko.kravchuk.net.ua")!) {
+                            HStack {
+                                Image(systemName: "globe")
+                                Text("Website")
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain) // Make it clickable but customized
+                        
+                        Link(destination: URL(string: "https://www.patreon.com/posts/meet-aurora-shot-149870544")!) {
+                            HStack {
+                                Image(systemName: "heart.fill").foregroundColor(.red)
+                                Text("Support on Patreon")
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.orange.opacity(0.1))
+                            .cornerRadius(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.orange.opacity(0.5), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
+                    // Feedback Button
+                    Link(destination: URL(string: "https://docs.google.com/forms/d/e/1FAIpQLScfmeY8L5rUCBJ9JsP0YHGQb76Rih5vw7AJ7wofX4S-vn4rbQ/viewform")!) {
+                        HStack {
+                            Image(systemName: "bubble.left.and.exclamationmark.bubble.fill")
+                                .foregroundColor(.green)
+                            Text("Send Feedback / Feature Request")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.green.opacity(0.5), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    
+                    // 3DentalAI Link
+                    Link(destination: URL(string: "https://www.linkedin.com/company/3dentai/posts/")!) {
+                        HStack {
+                            Text("🦷") // Tooth emoji for dental AI
+                            Text("Co-created 3DentalAI (Google Hackathon 🇨🇦)")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        }
+                        .foregroundColor(.blue)
+                        .padding(.vertical, 2)
+                    }
+                    .buttonStyle(.plain)
+                    
+                    Text("Powered by **Vibe Coding**")
+                        .foregroundColor(.secondary)
+                        .font(.footnote)
+                        .padding(.top, 4)
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .padding()
         .onAppear {
             updateFrequency = SettingsManager.shared.updateFrequency
             proxyServer = SettingsManager.shared.proxyServer
