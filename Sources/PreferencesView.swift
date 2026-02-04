@@ -537,6 +537,28 @@ struct StampSettingsView: View {
     }
 }
 
+struct AnimatedLogoText: View {
+    @State private var hueRotation: Double = 0
+    
+    var body: some View {
+        Text("Aurora Screen Shot")
+            .font(.title.bold())
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [.cyan, .green, .purple, .pink],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .hueRotation(.degrees(hueRotation))
+            .onAppear {
+                withAnimation(.linear(duration: 5.0).repeatForever(autoreverses: true)) {
+                    hueRotation = 360
+                }
+            }
+    }
+}
+
 struct AboutSettingsView: View {
     let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
     let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
@@ -545,7 +567,6 @@ struct AboutSettingsView: View {
     @State private var proxyServer = SettingsManager.shared.proxyServer
     @State private var repoUrl = SettingsManager.shared.repositoryURL
     @State private var autoRestart = SettingsManager.shared.autoRestartAfterUpdate
-    @State private var logoRotation: Double = 0 // For animation
     
     @State private var showUpdateAlert = false
     @State private var updateMessage = ""
@@ -567,21 +588,7 @@ struct AboutSettingsView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Aurora Screen Shot")
-                            .font(.title.bold())
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [.cyan, .green, .purple, .pink],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .hueRotation(.degrees(logoRotation)) // Animate colors
-                            .onAppear {
-                                withAnimation(.linear(duration: 5.0).repeatForever(autoreverses: true)) {
-                                    logoRotation = 360
-                                }
-                            }
+                        AnimatedLogoText() // Moved to separate view for reliable animation
                         
                         Text("Version \(version) (Build \(build))")
                             .font(.subheadline)
@@ -662,20 +669,47 @@ struct AboutSettingsView: View {
                     .foregroundColor(.secondary)
             }
             
-            Section(header: Text("Credits")) {
-                VStack(alignment: .leading, spacing: 6) {
+            Section(header: Text("Credits & Support")) {
+                VStack(alignment: .leading, spacing: 10) {
                     Text("Developed by **Levko Kravchuk**")
                     
-                    Link("levko.kravchuk.net.ua", destination: URL(string: "https://levko.kravchuk.net.ua")!)
-                        .font(.caption)
-                    
-                    Link("Support on Patreon", destination: URL(string: "https://www.patreon.com/posts/meet-aurora-shot-149870544")!)
-                        .font(.caption)
-                        .foregroundColor(.orange)
+                    // Styled Link Buttons
+                    HStack(spacing: 12) {
+                        Link(destination: URL(string: "https://levko.kravchuk.net.ua")!) {
+                            HStack {
+                                Image(systemName: "globe")
+                                Text("Website")
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain) // Make it clickable but customized
+                        
+                        Link(destination: URL(string: "https://www.patreon.com/posts/meet-aurora-shot-149870544")!) {
+                            HStack {
+                                Image(systemName: "heart.fill").foregroundColor(.red)
+                                Text("Support on Patreon")
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.orange.opacity(0.1))
+                            .cornerRadius(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.orange.opacity(0.5), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
                     
                     Text("Powered by **Vibe Coding**")
                         .foregroundColor(.secondary)
+                        .font(.footnote)
+                        .padding(.top, 4)
                 }
+                .padding(.vertical, 4)
             }
         }
         .padding()
