@@ -722,6 +722,19 @@ struct AboutSettingsView: View {
                     }
                     .buttonStyle(.plain)
                     
+                    // 3DentalAI Link
+                    Link(destination: URL(string: "https://www.linkedin.com/company/3dentai/posts/")!) {
+                        HStack {
+                            Text("🦷") // Tooth emoji for dental AI
+                            Text("Co-created 3DentalAI (Google Hackathon 🇨🇦)")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                        }
+                        .foregroundColor(.blue)
+                        .padding(.vertical, 2)
+                    }
+                    .buttonStyle(.plain)
+                    
                     Text("Powered by **Vibe Coding**")
                         .foregroundColor(.secondary)
                         .font(.footnote)
