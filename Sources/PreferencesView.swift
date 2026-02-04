@@ -704,6 +704,24 @@ struct AboutSettingsView: View {
                         .buttonStyle(.plain)
                     }
                     
+                    // Feedback Button
+                    Link(destination: URL(string: "https://docs.google.com/forms/d/e/1FAIpQLScfmeY8L5rUCBJ9JsP0YHGQb76Rih5vw7AJ7wofX4S-vn4rbQ/viewform")!) {
+                        HStack {
+                            Image(systemName: "bubble.left.and.exclamationmark.bubble.fill")
+                                .foregroundColor(.green)
+                            Text("Send Feedback / Feature Request")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.green.opacity(0.5), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    
                     Text("Powered by **Vibe Coding**")
                         .foregroundColor(.secondary)
                         .font(.footnote)
