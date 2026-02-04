@@ -79,12 +79,8 @@ fi
 # Extract changelog for this version (simple grep or just generic text)
 NOTES="## Changes in ${TAG}\n\n- See CHANGELOG.md for details.\n- Automated build."
 
-# Rename DMG to include version (User request)
-VERSIONED_DMG="AuroraScreenshot_${TAG}.dmg"
-mv "$DMG_FILE" "$VERSIONED_DMG"
-echo "✅ Renamed to $VERSIONED_DMG"
-
-gh release create "$TAG" "$VERSIONED_DMG" --title "Aurora Screen Shot ${TAG}" --notes "$NOTES"
+# Upload original DMG name so updater works (v3.0.15 expects _Installer.dmg)
+gh release create "$TAG" "$DMG_FILE" --title "Aurora Screen Shot ${TAG}" --notes "$NOTES"
 
 echo "🎉 Release ${TAG} published successfully!"
 echo "🔗 https://github.com/LEO2008k/AuroraScreenShot/releases/tag/${TAG}"
