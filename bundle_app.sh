@@ -89,6 +89,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<EOF
     <string>$APP_NAME</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
     <key>CFBundleShortVersionString</key>
     <string>$SEM_VER</string>
     <key>CFBundleVersion</key>
@@ -110,9 +112,11 @@ chmod +x "$MACOS_DIR/$APP_NAME"
 echo "Signing app..."
 codesign --force --deep --sign - "$APP_DIR"
 
-# Force finder to refresh icon
+# Force finder to refresh icon and metadata
 touch "$APP_DIR"
 touch "$APP_DIR/Contents/Info.plist"
+# Tell Spotlight/Finder to re-index this app immediately
+mdimport "$APP_DIR"
 
 echo "Done! $APP_NAME.app created."
 echo "You can now move this to /Applications or run it directly."
