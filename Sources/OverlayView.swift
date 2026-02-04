@@ -586,45 +586,50 @@ struct OverlayView: View {
     }
     func printImage(geometry: GeometryProxy) {
         guard let cropped = getCroppedImage(geometry: geometry) else { return }
+        
+        // Prepare image data immediately
         let nsImage = NSImage(cgImage: cropped, size: NSSize(width: cropped.width, height: cropped.height))
-        
-        let printInfo = NSPrintInfo.shared
-        printInfo.horizontalPagination = .clip // Don't scatter across pages
-        printInfo.verticalPagination = .clip
-        printInfo.isHorizontallyCentered = true
-        printInfo.isVerticallyCentered = true
-        
-        // Logic to fit to page
-        let paperSize = printInfo.paperSize
-        let printArea = printInfo.imageablePageBounds
-        
-        // Use printArea if available, otherwise paperSize with margins
-        let pageW = printArea.width > 0 ? printArea.width : paperSize.width - 40
-        let pageH = printArea.height > 0 ? printArea.height : paperSize.height - 40
-        
         let contentW = CGFloat(cropped.width)
         let contentH = CGFloat(cropped.height)
         
-        // Calculate scale needed to fit
-        let scaleX = pageW / contentW
-        let scaleY = pageH / contentH
-        let scale = min(scaleX, scaleY) // Fit completely
-        
-        // If image is bigger than page, scale down. If smaller, keep 1.0 (or scale up if you want)
-        // Usually for screenshots we want to see them clearly, so let's allow scale up if it's tiny, 
-        // but mostly we care about scaling down 5K screenshots.
-        printInfo.scalingFactor = scale
-        
-        let imageView = NSImageView(frame: NSRect(x: 0, y: 0, width: contentW, height: contentH))
-        imageView.image = nsImage
-        imageView.imageScaling = .scaleProportionallyUpOrDown
-        
-        let op = NSPrintOperation(view: imageView, printInfo: printInfo)
-        op.showsPrintPanel = true
-        op.showsProgressPanel = true
-        
-        op.run()
+        // Close overlay UI first so it doesn't block the print dialog
         onClose()
+        
+        // Run print operation after a brief delay to allow window to close
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            let printInfo = NSPrintInfo.shared
+            printInfo.horizontalPagination = .clip
+            printInfo.verticalPagination = .clip
+            printInfo.isHorizontallyCentered = true
+            printInfo.isVerticallyCentered = true
+            
+            // Logic to fit to page
+            let paperSize = printInfo.paperSize
+            let printArea = printInfo.imageablePageBounds
+            
+            let pageW = printArea.width > 0 ? printArea.width : paperSize.width - 40
+            let pageH = printArea.height > 0 ? printArea.height : paperSize.height - 40
+            
+            // Calculate scale needed to fit
+            let scaleX = pageW / contentW
+            let scaleY = pageH / contentH
+            let scale = min(scaleX, scaleY)
+            
+            printInfo.scalingFactor = scale
+            
+            let imageView = NSImageView(frame: NSRect(x: 0, y: 0, width: contentW, height: contentH))
+            imageView.image = nsImage
+            imageView.imageScaling = .scaleProportionallyUpOrDown
+            
+            let op = NSPrintOperation(view: imageView, printInfo: printInfo)
+            op.showsPrintPanel = true
+            op.showsProgressPanel = true
+            
+            // Bring app to front to ensure dialog is visible
+            NSApp.activate(ignoringOtherApps: true)
+            
+            op.run()
+        }
     }
     func openSettings() {
         onClose()
