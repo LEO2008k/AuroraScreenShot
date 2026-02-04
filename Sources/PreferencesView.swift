@@ -541,7 +541,7 @@ struct AnimatedLogoText: View {
     @State private var hueRotation: Double = 0
     
     var body: some View {
-        Text("Aurora Screen Shot")
+        Text("Aurora Screen Shot 🇨🇦")
             .font(.title.bold())
             .foregroundStyle(
                 LinearGradient(
