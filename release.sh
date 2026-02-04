@@ -8,6 +8,11 @@ echo "🚀 Preparing Release for Aurora Screenshot v${VERSION}..."
 # 1. Build App and DMG
 echo "📦 Building App and DMG..."
 ./bundle_app.sh
+
+# Re-read version AFTER build (to match the app)
+VERSION=$(cat version.txt)
+echo "📦 App build complete. Version is now: $VERSION"
+
 ./create_dmg.sh
 
 DMG_FILE="AuroraScreenshot_Installer.dmg"
