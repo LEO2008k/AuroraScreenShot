@@ -303,6 +303,18 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kAutoRestartAfterUpdate) }
     }
     
+    // Auto Check Updates
+    private let kAutoCheckUpdates = "AutoCheckUpdates"
+    var autoCheckUpdates: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: kAutoCheckUpdates) == nil {
+                return true // Default true
+            }
+            return UserDefaults.standard.bool(forKey: kAutoCheckUpdates)
+        }
+        set { UserDefaults.standard.set(newValue, forKey: kAutoCheckUpdates) }
+    }
+    
     func promptForSaveDirectory() {
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = false
