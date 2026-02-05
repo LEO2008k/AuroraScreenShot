@@ -336,27 +336,22 @@ struct OverlayView: View {
              ActionIconBtn(icon: "eyedropper", label: "Pipette", isActive: viewModel.toolMode == .pipette, hoverText: "Pick Color", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .pipette ? .selection : .pipette }
                           if [.draw, .line, .arrow, .redact, .highlight, .pipette].contains(viewModel.toolMode) {
                  Divider().frame(width: 20)
+                 
+                 // Current Color Preview (Large)
+                 Circle()
+                     .fill(viewModel.selectedColor)
+                     .frame(width: 24, height: 24)
+                     .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                     .shadow(radius: 2)
+                     .help("Current Color")
+                 
                  colorPalette()
+                 
                  if viewModel.toolMode != .pipette {
                     toolSettings()
                  }
-                 // Set OCR Bg Button
-                 if viewModel.toolMode == .pipette {
-                     Button(action: {
-                         if let nsColor = NSColor(viewModel.selectedColor).usingColorSpace(.sRGB) {
-                             SettingsManager.shared.ocrEditorCustomColor = nsColor.toHex()
-                             SettingsManager.shared.ocrEditorBgMode = "Custom"
-                         }
-                     }) {
-                         VStack(spacing: 2) {
-                             Image(systemName: "doc.text.fill").font(.system(size: 14))
-                             Text("Set OCR Bg").font(.system(size: 8))
-                         }
-                         .frame(width: 50, height: 35)
-                         .background(Color.secondary.opacity(0.1))
-                         .cornerRadius(6)
-                     }.buttonStyle(.plain)
-                 }
+                 
+                 // Removed "Set OCR Bg" button as requested
              }
          }
          .padding(6).background(Color(NSColor.windowBackgroundColor).opacity(0.95)).cornerRadius(6).shadow(radius: 4)
