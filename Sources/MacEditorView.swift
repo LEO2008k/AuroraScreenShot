@@ -30,8 +30,8 @@ struct MacEditorView: NSViewRepresentable {
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
         textView.textContainer?.widthTracksTextView = true
-        textView.drawsBackground = false
-        textView.backgroundColor = .clear
+        textView.drawsBackground = true
+        textView.backgroundColor = backgroundColor
         textView.isEditable = isEditable
         textView.isRichText = false
         textView.font = font
@@ -49,12 +49,16 @@ struct MacEditorView: NSViewRepresentable {
     }
     
     func updateNSView(_ nsView: NSView, context: Context) {
-        // Update background color
-        nsView.layer?.backgroundColor = backgroundColor.cgColor
-        
         // Find the scrollView and textView
         guard let scrollView = nsView.subviews.first as? NSScrollView,
               let textView = scrollView.documentView as? NSTextView else { return }
+        
+        // Update background on TextView directly for better reliability
+        textView.backgroundColor = backgroundColor
+        textView.drawsBackground = true
+        
+        // Ensure container matches (optional, but good for margins)
+        nsView.layer?.backgroundColor = backgroundColor.cgColor
         
         // Update scroll view frame
         scrollView.frame = nsView.bounds

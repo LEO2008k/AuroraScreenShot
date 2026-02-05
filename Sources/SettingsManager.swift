@@ -362,7 +362,7 @@ class SettingsManager {
     }
     
     var ocrEditorBgMode: String {
-        get { UserDefaults.standard.string(forKey: kOCREditorBgMode) ?? "System" }
+        get { UserDefaults.standard.string(forKey: kOCREditorBgMode) ?? "Dark" }
         set { UserDefaults.standard.set(newValue, forKey: kOCREditorBgMode) }
     }
     
