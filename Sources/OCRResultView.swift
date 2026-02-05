@@ -80,20 +80,20 @@ struct OCRResultView: View {
                     }
                     .padding(.horizontal)
                     
-                    TextEditor(text: $text)
-                        .font(.system(size: fontSize))
-                        .foregroundColor(bgMode == "Custom" || bgMode == "Dark" ? .white : (bgMode == "Light" ? .black : .primary))
-                        .padding(5)
-
-                        .background(editorBackgroundColor)
-                        .transparentScrolling() // Important for custom background
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 0)
-                                .stroke(showCopyFlash && activeCopyTarget == .original ? 
-                                        LinearGradient(colors: [.cyan, .green, .purple], startPoint: .leading, endPoint: .trailing) : 
-                                        LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing), 
-                                        lineWidth: 2)
-                        )
+                    MacEditorView(
+                        text: $text, 
+                        font: .systemFont(ofSize: CGFloat(fontSize)), 
+                        textColor: .textColor
+                    )
+                    .padding(5)
+                    .background(editorBackgroundColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 0)
+                            .stroke(showCopyFlash && activeCopyTarget == .original ? 
+                                    LinearGradient(colors: [.cyan, .green, .purple], startPoint: .leading, endPoint: .trailing) : 
+                                    LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing), 
+                                    lineWidth: 2)
+                    )
                 }
                 .frame(minHeight: 100)
                 
@@ -109,19 +109,20 @@ struct OCRResultView: View {
                         .padding(.horizontal)
                         
                         ZStack {
-                            TextEditor(text: $translatedText)
-                                .font(.system(size: fontSize))
-                                .foregroundColor(bgMode == "Custom" || bgMode == "Dark" ? .white : (bgMode == "Light" ? .black : .primary))
-                                .padding(5)
-                                .background(editorBackgroundColor)
-                                .transparentScrolling()
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 0)
-                                        .stroke(showCopyFlash && activeCopyTarget == .translation ? 
-                                                LinearGradient(colors: [.purple, .pink, .orange], startPoint: .leading, endPoint: .trailing) : 
-                                                LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing), 
-                                                lineWidth: 2)
-                                )
+                            MacEditorView(
+                                text: $translatedText, 
+                                font: .systemFont(ofSize: CGFloat(fontSize)), 
+                                textColor: .textColor
+                            )
+                            .padding(5)
+                            .background(editorBackgroundColor)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 0)
+                                    .stroke(showCopyFlash && activeCopyTarget == .translation ? 
+                                            LinearGradient(colors: [.purple, .pink, .orange], startPoint: .leading, endPoint: .trailing) : 
+                                            LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing), 
+                                            lineWidth: 2)
+                            )
                             
                             if isTranslating {
                                 ProgressView("Translating via Ollama...")
