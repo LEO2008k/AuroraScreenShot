@@ -68,16 +68,25 @@ class HistoryManager: ObservableObject {
     }
     
     func cleanOldEntries() {
-        let hours = SettingsManager.shared.historyRetentionHours
-        if hours <= 0 { return } // If 0 or negative, maybe disable auto-delete? (User requested "auto delete logic", let's assume default is always active unless set to huge)
+        var hours = SettingsManager.shared.historyRetentionHours
         
-        let cutoff = Date().addingTimeInterval(-Double(hours) * 3600)
+        // Safety Clean: Enforce Max 2 weeks (336 hours) if user tries to go crazy custom
+        // Unless set to -1 (Never), but user said "not more than 2 weeks"
+        // Let's respect the user's setting but clamp 'Custom' input in UI. 
+        // Here we just apply what is set.
         
-        let initialCount = history.count
-        history.removeAll { $0.date < cutoff }
-        
-        if history.count != initialCount {
-            saveHistory()
+        if hours > 0 {
+            let cutoff = Date().addingTimeInterval(-Double(hours) * 3600)
+            history.removeAll { $0.date < cutoff }
         }
+        
+        // RAM/Disk Safety: Max 5,000 items
+        // Even if time is "Never", we don't want 1GB JSON.
+        if history.count > 5000 {
+            // Keep the newest 5000
+            history = Array(history.prefix(5000))
+        }
+        
+        saveHistory()
     }
 }

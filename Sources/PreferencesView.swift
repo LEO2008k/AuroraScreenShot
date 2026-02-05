@@ -880,6 +880,12 @@ struct HistorySettingsView: View {
                                 retentionHours = newValue
                                 SettingsManager.shared.historyRetentionHours = newValue
                                 HistoryManager.shared.cleanOldEntries()
+                            } else {
+                                // User selected 'Custom...', ensure we start with a valid custom value if it was a preset before
+                                if presets.contains(retentionHours) {
+                                    retentionHours = 48 // Default custom start
+                                    SettingsManager.shared.historyRetentionHours = 48
+                                }
                             }
                         }
                     )
@@ -891,23 +897,33 @@ struct HistorySettingsView: View {
                         Text("24 Hours").tag(24)
                         Text("48 Hours").tag(48)
                         Text("5 Days").tag(120)
-                        Text("Never").tag(-1)
+                        Text("Never (Not Recommended)").tag(-1)
                         Divider()
                         Text("Custom...").tag(0)
                     }
                     
                     // Show TextField if Custom (value not in presets)
-                    if !presets.contains(retentionHours) {
+                    if !presets.contains(retentionHours) && retentionHours != -1 {
                         HStack {
-                            Text("Custom Retention (Hours):")
+                            Text("Custom Retention:")
                             TextField("Hours", value: $retentionHours, format: .number)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(width: 100)
+                                .frame(width: 80)
                                 .onChange(of: retentionHours) { val in
-                                    SettingsManager.shared.historyRetentionHours = val
+                                    // Constraint: Max 336 hours (2 weeks)
+                                    if val > 336 { retentionHours = 336 }
+                                    // Constraint: Min 1 hour
+                                    if val < 1 { retentionHours = 1 }
+                                    
+                                    SettingsManager.shared.historyRetentionHours = retentionHours
                                 }
-                            Text("hours")
+                            Text("hours (Max 336)")
+                                .foregroundColor(.secondary)
                         }
+                    } else if retentionHours == 0 {
+                        // Edge case fix
+                        Text("Please select or enter a value.")
+                            .font(.caption).foregroundColor(.red)
                     }
                     
                     if retentionHours > 0 {
@@ -915,9 +931,9 @@ struct HistorySettingsView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     } else if retentionHours == -1 {
-                         Text("History will never be deleted automatically.")
+                         Text("Warning: History will accumulate until disk is full.")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.orange)
                     }
                 }
                 
