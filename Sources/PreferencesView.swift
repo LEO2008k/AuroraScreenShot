@@ -17,6 +17,10 @@ struct PreferencesView: View {
                 .tabItem {
                     Label("AI", systemImage: "brain.head.profile")
                 }
+            HistorySettingsView()
+                .tabItem {
+                    Label("History", systemImage: "clock")
+                }
             ShortcutsSettingsView()
                 .tabItem {
                     Label("Shortcuts", systemImage: "keyboard")
@@ -838,6 +842,74 @@ struct AboutSettingsView: View {
             alert.addButton(withTitle: "Quit & Install")
             alert.runModal()
             NSApp.terminate(nil)
+        }
+    }
+}
+
+struct HistorySettingsView: View {
+    @State private var saveHistory = SettingsManager.shared.saveHistory
+    @State private var retentionHours = SettingsManager.shared.historyRetentionHours
+    @ObservedObject var manager = HistoryManager.shared
+    
+    var body: some View {
+        Form {
+            Section(header: Text("Translation History")) {
+                Toggle("Save Translation History", isOn: $saveHistory)
+                    .onChange(of: saveHistory) { newValue in
+                        SettingsManager.shared.saveHistory = newValue
+                    }
+                
+                Text("Translations are saved locally in Application Support.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            if saveHistory {
+                Section(header: Text("Retention Policy")) {
+                    Picker("Auto-delete history older than:", selection: $retentionHours) {
+                        Text("24 Hours").tag(24)
+                        Text("48 Hours").tag(48)
+                        Text("1 Week (168h)").tag(168)
+                        Text("Never").tag(-1)
+                    }
+                    .onChange(of: retentionHours) { newValue in
+                        SettingsManager.shared.historyRetentionHours = newValue
+                        HistoryManager.shared.cleanOldEntries()
+                    }
+                    
+                    if retentionHours > 0 {
+                        Text("History older than \(retentionHours) hours will be automatically deleted.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Section(header: Text("Management")) {
+                    HStack {
+                        Text("Current Items:")
+                        Text("\(manager.history.count)")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Button(action: {
+                        HistoryWindowController.shared.show()
+                    }) {
+                        Label("Open History Window", systemImage: "macwindow")
+                    }
+                    
+                    Button(action: {
+                        HistoryManager.shared.clearAll()
+                    }) {
+                        Label("Clear All History", systemImage: "trash")
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+        }
+        .padding()
+        .onAppear {
+            saveHistory = SettingsManager.shared.saveHistory
+            retentionHours = SettingsManager.shared.historyRetentionHours
         }
     }
 }

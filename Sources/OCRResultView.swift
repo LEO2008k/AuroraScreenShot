@@ -181,6 +181,12 @@ struct OCRResultView: View {
                 switch result {
                 case .success(let translated):
                     self.translatedText = translated
+                    HistoryManager.shared.addEntry(
+                        original: self.text, 
+                        translated: translated, 
+                        source: self.sourceLanguage, 
+                        target: self.targetLanguage
+                    )
                 case .failure(let error):
                     self.errorMessage = error.localizedDescription
                     self.showError = true

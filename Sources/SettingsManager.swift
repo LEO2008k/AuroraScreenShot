@@ -315,6 +315,23 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kAutoCheckUpdates) }
     }
     
+    // History Settings
+    private let kSaveHistory = "SaveHistory"
+    private let kHistoryRetentionHours = "HistoryRetentionHours"
+    
+    var saveHistory: Bool {
+        get { UserDefaults.standard.bool(forKey: kSaveHistory) }
+        set { UserDefaults.standard.set(newValue, forKey: kSaveHistory) }
+    }
+    
+    var historyRetentionHours: Int {
+        get { 
+            let val = UserDefaults.standard.integer(forKey: kHistoryRetentionHours)
+            return val == 0 ? 48 : val // Default 48 hours
+        }
+        set { UserDefaults.standard.set(newValue, forKey: kHistoryRetentionHours) }
+    }
+    
     func promptForSaveDirectory() {
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = false
