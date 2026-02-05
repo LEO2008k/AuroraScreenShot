@@ -20,6 +20,8 @@ struct MacEditorView: NSViewRepresentable {
         scrollView.borderType = .noBorder
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true // Allow auto-hiding like standard macOS apps (modern feel)
+        scrollView.scrollerStyle = .overlay
         scrollView.autoresizingMask = [.width, .height]
         
         // Create text view
