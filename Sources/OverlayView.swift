@@ -302,11 +302,10 @@ struct OverlayView: View {
         let imagePointY = (point.y - offsetY) / scale
         
         if imagePointX >= 0 && imagePointX < imageWidth && imagePointY >= 0 && imagePointY < imageHeight {
-             if let bitmap = NSBitmapImageRep(cgImage: image) {
-                 if let color = bitmap.colorAt(x: Int(imagePointX), y: Int(imagePointY)) {
-                     viewModel.selectedColor = Color(color)
-                 }
-             }
+            let bitmap = NSBitmapImageRep(cgImage: image)
+            if let color = bitmap.colorAt(x: Int(imagePointX), y: Int(imagePointY)) {
+                viewModel.selectedColor = Color(color)
+            }
         }
     }
 

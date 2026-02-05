@@ -1,5 +1,6 @@
 #!/bin/bash
 # This program was developed by Levko Kravchuk with the help of Vibe Coding
+set -e
 
 APP_NAME="AuroraScreenshot"
 # CHANGED: Use Release folder

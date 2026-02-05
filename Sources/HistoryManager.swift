@@ -68,7 +68,7 @@ class HistoryManager: ObservableObject {
     }
     
     func cleanOldEntries() {
-        var hours = SettingsManager.shared.historyRetentionHours
+        let hours = SettingsManager.shared.historyRetentionHours
         
         // Safety Clean: Enforce Max 2 weeks (336 hours) if user tries to go crazy custom
         // Unless set to -1 (Never), but user said "not more than 2 weeks"
