@@ -7,10 +7,12 @@ struct OCRResultView: View {
     var onClose: () -> Void
     
     @State private var translatedText: String = ""
+    @State private var sourceLanguage: String = "Auto"
     @State private var targetLanguage: String = SettingsManager.shared.defaultTargetLanguage
     @State private var isTranslating = false
     @State private var showError = false
     @State private var errorMessage = ""
+    @State private var showLengthWarning = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -31,10 +33,16 @@ struct OCRResultView: View {
             VSplitView {
                 // Top: Original Text
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Original Text")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal)
+                    HStack {
+                         Text("Original Text")
+                             .font(.caption)
+                             .foregroundColor(.secondary)
+                         Spacer()
+                         Text("\(text.count) chars")
+                             .font(.caption2)
+                             .foregroundColor(text.count > 2000 ? .orange : .secondary)
+                    }
+                    .padding(.horizontal)
                     
                     TextEditor(text: $text)
                         .font(.body)
@@ -47,7 +55,7 @@ struct OCRResultView: View {
                 if !translatedText.isEmpty || isTranslating {
                      VStack(alignment: .leading, spacing: 5) {
                         HStack {
-                            Text("Translation (\(targetLanguage))")
+                            Text("Translation (\(sourceLanguage) → \(targetLanguage))")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
@@ -86,13 +94,27 @@ struct OCRResultView: View {
             
             // Footer Actions
             HStack {
-                // Formatting / Language Controls
-                Picker("Identify Language:", selection: $targetLanguage) {
-                     ForEach(SettingsManager.shared.translationLanguages, id: \.self) { lang in
-                         Text(lang).tag(lang)
-                     }
+                // Language Controls
+                HStack(spacing: 8) {
+                    Text("From:")
+                        .font(.caption)
+                    Picker("", selection: $sourceLanguage) {
+                        Text("Auto").tag("Auto")
+                        ForEach(SettingsManager.shared.translationLanguages, id: \.self) { lang in
+                            Text(lang).tag(lang)
+                        }
+                    }
+                    .frame(width: 120)
+                    
+                    Text("To:")
+                        .font(.caption)
+                    Picker("", selection: $targetLanguage) {
+                        ForEach(SettingsManager.shared.translationLanguages, id: \.self) { lang in
+                            Text(lang).tag(lang)
+                        }
+                    }
+                    .frame(width: 120)
                 }
-                .frame(width: 200)
                 
                 Button(action: translateText) {
                     Label("Translate", systemImage: "globe")
@@ -109,11 +131,29 @@ struct OCRResultView: View {
             .padding()
             .background(Color(NSColor.windowBackgroundColor))
         }
-        .frame(minWidth: 500, minHeight: 500)
+        .frame(minWidth: 600, minHeight: 500)
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
+        }
+        .alert("Long Text Detected", isPresented: $showLengthWarning) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("The extracted text is over 2000 characters via Apple Vision.\nTranslation might take longer than usual.")
+        }
+        .onAppear {
+            if text.count > 2000 {
+                showLengthWarning = true
+            }
+            // Auto-detect language just for UI
+            let detected = AIHelper.shared.detectLanguage(text: text)
+            if detected != "Undetermined" {
+                // We don't change 'sourceLanguage' to detected, we keep it 'Auto',
+                // but we could show it in UI if we wanted.
+                // Or we can set it:
+                // sourceLanguage = detected
+            }
         }
     }
     
@@ -123,14 +163,10 @@ struct OCRResultView: View {
         pasteboard.setString(text, forType: .string)
     }
     
-    func googleSearch() {
-        // ... kept if needed, but removing for cleaner UI based on request
-    }
-    
     func translateText() {
         isTranslating = true
-        // Use Ollama explicitly as requested
-        AIHelper.shared.translateWithOllama(text: text, to: targetLanguage) { result in
+        // Pass source and target
+        AIHelper.shared.translateWithOllama(text: text, from: sourceLanguage, to: targetLanguage) { result in
             DispatchQueue.main.async {
                 isTranslating = false
                 switch result {
@@ -149,7 +185,7 @@ class OCRResultWindowController: NSWindowController {
     
     convenience init(text: String) {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 500, height: 450),
+            contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
             backing: .buffered,
             defer: false

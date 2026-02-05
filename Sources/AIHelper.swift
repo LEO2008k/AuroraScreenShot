@@ -1,6 +1,7 @@
 // This program was developed by Levko Kravchuk with the help of Vibe Coding
 import Cocoa
 import Vision
+import NaturalLanguage
 
 struct AIHelper {
     static let shared = AIHelper()
@@ -204,9 +205,17 @@ struct AIHelper {
         }.resume()
     }
     
-    func translateWithOllama(text: String, to language: String, completion: @escaping (Result<String, Error>) -> Void) {
+    func detectLanguage(text: String) -> String {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        if let lang = recognizer.dominantLanguage {
+            return Locale.current.localizedString(forLanguageCode: lang.rawValue) ?? lang.rawValue
+        }
+        return "Auto"
+    }
+
+    func translateWithOllama(text: String, from source: String = "Auto", to target: String, completion: @escaping (Result<String, Error>) -> Void) {
         let host = SettingsManager.shared.ollamaHost
-        // Use dedicated Translation Model (e.g. llama3.1), NOT the Image Model (llava)
         let model = SettingsManager.shared.ollamaTranslationModel
         
         guard let url = URL(string: "\(host)/api/generate") else {
@@ -214,7 +223,8 @@ struct AIHelper {
             return
         }
         
-        let prompt = "Translate the following text to \(language). Output ONLY the translated text, do not add any explanations or notes. \n\nText: \(text)"
+        let sourceLang = source == "Auto" ? "the detected language" : source
+        let prompt = "Translate the following text from \(sourceLang) to \(target). Output ONLY the translated text, do not add any explanations or notes. \n\nText: \(text)"
         
         let body = OllamaRequest(
             model: model,
