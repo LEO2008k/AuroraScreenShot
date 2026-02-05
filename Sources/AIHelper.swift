@@ -102,6 +102,29 @@ struct AIHelper {
     }
     
     func analyzeImageWithOllama(image: CGImage, completion: @escaping (Result<String, Error>) -> Void) {
+        // STRATEGY CHANGE:
+        // If the user hasn't provided a custom prompt (meaning they just want OCR),
+        // use Apple's Native Vision framework. It is 100x faster and 100% accurate for text.
+        // It avoids 'llava' hallucinations (like seeing "Trash" or "Cats").
+        
+        // 1. Check Custom Prompt
+        let customPrompt = SettingsManager.shared.aiPrompt
+        
+        if customPrompt.isEmpty {
+            // MODE: Pure OCR (Text Extraction)
+            let recognizedText = recognizeText(from: image)
+            // Vision returns "No text detected." if empty, but let's check content length
+            if recognizedText == "No text detected." || recognizedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                 completion(.failure(NSError(domain: "OCRShot", code: 404, userInfo: [NSLocalizedDescriptionKey: "No text detected by Apple Vision."])))
+            } else {
+                 completion(.success(recognizedText))
+            }
+            return
+        }
+        
+        // 2. MODE: AI Analysis (Custom Prompt present)
+        // If user wants to "Describe this image", we proceed to call Ollama (llava)
+        
         let host = SettingsManager.shared.ollamaHost
         let model = SettingsManager.shared.ollamaModel
         
@@ -120,15 +143,9 @@ struct AIHelper {
         }
         let base64Image = pngData.base64EncodedString()
         
-        // Use custom prompt if set, otherwise use strict OCR prompt
-        let customPrompt = SettingsManager.shared.aiPrompt
-        let finalPrompt = customPrompt.isEmpty ? 
-            "Extract all text visible in this image. Output ONLY the raw text found. Do not describe the image. Do not add any conversational filler." : 
-            customPrompt
-        
         let body = OllamaRequest(
             model: model,
-            prompt: finalPrompt,
+            prompt: customPrompt,
             images: [base64Image],
             stream: false
         )
