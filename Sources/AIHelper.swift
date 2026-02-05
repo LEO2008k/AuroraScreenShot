@@ -102,16 +102,16 @@ struct AIHelper {
         let done: Bool
     }
     
-    func analyzeImageWithOllama(image: CGImage, completion: @escaping (Result<String, Error>) -> Void) {
+    func analyzeImageWithOllama(image: CGImage, customPrompt: String? = nil, completion: @escaping (Result<String, Error>) -> Void) {
         // STRATEGY CHANGE:
         // If the user hasn't provided a custom prompt (meaning they just want OCR),
         // use Apple's Native Vision framework. It is 100x faster and 100% accurate for text.
         // It avoids 'llava' hallucinations (like seeing "Trash" or "Cats").
         
         // 1. Check Custom Prompt
-        let customPrompt = SettingsManager.shared.aiPrompt
+        let promptToUse = customPrompt ?? SettingsManager.shared.aiPrompt
         
-        if customPrompt.isEmpty {
+        if promptToUse.isEmpty {
             // MODE: Pure OCR (Text Extraction)
             let recognizedText = recognizeText(from: image)
             // Vision returns "No text detected." if empty, but let's check content length
@@ -146,7 +146,7 @@ struct AIHelper {
         
         let body = OllamaRequest(
             model: model,
-            prompt: customPrompt,
+            prompt: promptToUse,
             images: [base64Image],
             stream: false
         )

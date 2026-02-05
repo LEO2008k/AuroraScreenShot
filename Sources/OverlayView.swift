@@ -47,6 +47,12 @@ struct OverlayView: View {
     @State private var auroraRotation: Double = 0
     @State private var auroraPhase: CGFloat = 0
     
+    // AI Prompt State
+    @State private var showAIPrompt: Bool = false
+    @State private var aiQuery: String = ""
+    @State private var aiResponse: String = ""
+    @State private var isAIThinking: Bool = false
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -111,7 +117,12 @@ struct OverlayView: View {
                     watermarkPreview()
                     if !isQuickOCR {
                         actionBar(geometry: geometry)
-                        toolsBar(geometry: geometry)
+                        
+                        if showAIPrompt {
+                            aiPromptPanel(geometry: geometry)
+                        } else {
+                            toolsBar(geometry: geometry)
+                        }
                     }
                 }
             }
@@ -277,7 +288,11 @@ struct OverlayView: View {
                 
                 ActionIconBtn(icon: "text.viewfinder", label: "OCR", hoverText: "Recognize Text", activeTooltip: $activeTooltip, action: { performOCR(geometry: geometry) })
                 if SettingsManager.shared.enableOllama {
-                    ActionIconBtn(icon: "eye", label: "Ollama", hoverText: "Analyze with AI", activeTooltip: $activeTooltip, action: { analyzeWithOllama(geometry: geometry) })
+                    ActionIconBtn(icon: "eye", label: "Ollama", isActive: showAIPrompt, hoverText: "Analyze with AI", activeTooltip: $activeTooltip, action: { 
+                        showAIPrompt.toggle() 
+                        aiResponse = ""
+                        aiQuery = ""
+                    })
                 }
                 ActionIconBtn(icon: "magnifyingglass", label: "Search", hoverText: "Search in Google", activeTooltip: $activeTooltip, action: { searchImage(geometry: geometry) })
                 ActionIconBtn(icon: "printer", label: "Print", hoverText: "Print Image", activeTooltip: $activeTooltip, action: { printImage(geometry: geometry) })
@@ -627,25 +642,125 @@ struct OverlayView: View {
         selectionRect = rect
     }
     
-    func analyzeWithOllama(geometry: GeometryProxy) {
+    func submitAIQuery(geometry: GeometryProxy) {
         guard let cropped = getCroppedImage(geometry: geometry) else { return }
-        onClose()
         
-        // FIXED INIT: No image arg
-        let resultVC = OCRResultWindowController(text: "Initializing AI...")
-        (NSApp.delegate as? AppDelegate)?.resultWindowController = resultVC
-        resultVC.showWindow(nil)
-        resultVC.window?.center()
+        isAIThinking = true
+        aiResponse = "Analyzing..."
         
-        AIHelper.shared.analyzeImageWithOllama(image: cropped) { result in
+        // Use user query or default if empty
+        let prompt = aiQuery.isEmpty ? "Describe this image." : aiQuery
+        
+        AIHelper.shared.analyzeImageWithOllama(image: cropped, customPrompt: prompt) { result in
              DispatchQueue.main.async {
+                 isAIThinking = false
                  switch result {
                  case .success(let text):
-                     resultVC.updateText(text)
+                     aiResponse = text
                  case .failure(let error):
-                     resultVC.updateText("Error: \(error.localizedDescription)")
+                     aiResponse = "Error: \(error.localizedDescription)"
                  }
              }
+        }
+    }
+    
+    @ViewBuilder func aiPromptPanel(geometry: GeometryProxy) -> some View {
+         let rightSpace = geometry.size.width - selectionRect.maxX
+         let leftSpace = selectionRect.minX
+         let panelX: CGFloat
+         if rightSpace > 50 { panelX = selectionRect.maxX + 160 } // Shift right
+         else if leftSpace > 50 { panelX = selectionRect.minX - 160 } // Shift left
+         else { panelX = selectionRect.maxX - 160 }
+         
+         let panelY = min(max(selectionRect.midY, 150), geometry.size.height - 150)
+         
+         VStack(spacing: 8) {
+             // Header
+             HStack {
+                 Image(systemName: "sparkles").foregroundColor(.yellow)
+                 Text("Ask AI").font(.headline).foregroundColor(.white)
+                 Spacer()
+                 Button(action: { showAIPrompt = false }) {
+                     Image(systemName: "xmark.circle.fill").foregroundColor(.secondary)
+                 }.buttonStyle(.plain)
+             }
+             
+             // Input
+             HStack {
+                 TextField("Ask a question about this area...", text: $aiQuery, onCommit: {
+                     submitAIQuery(geometry: geometry)
+                 })
+                 .textFieldStyle(PlainTextFieldStyle())
+                 .padding(6)
+                 .background(Color.black.opacity(0.3))
+                 .cornerRadius(4)
+                 .frame(height: 30)
+                 
+                 Button(action: { submitAIQuery(geometry: geometry) }) {
+                     Image(systemName: "arrow.up.circle.fill")
+                         .font(.system(size: 20))
+                         .foregroundColor(.blue)
+                 }.buttonStyle(.plain)
+             }
+             
+             Divider().background(Color.gray)
+             
+             // Response
+             if isAIThinking {
+                 HStack {
+                     ProgressView().scaleEffect(0.5)
+                     Text("Thinking...").font(.caption).foregroundColor(.secondary)
+                 }
+                 .frame(height: 100)
+             } else if !aiResponse.isEmpty {
+                 ScrollView {
+                     Text(aiResponse)
+                         .font(.system(size: 13))
+                         .foregroundColor(.white)
+                         .fixedSize(horizontal: false, vertical: true)
+                         .multilineTextAlignment(.leading)
+                         .padding(4)
+                 }
+                 .frame(maxHeight: 200)
+                 
+                 HStack {
+                     Spacer()
+                     Button("Copy") {
+                         let p = NSPasteboard.general
+                         p.clearContents()
+                         p.setString(aiResponse, forType: .string)
+                     }.font(.caption).buttonStyle(.plain).foregroundColor(.blue)
+                 }
+             } else {
+                 Text("Enter a prompt to analyze the selected area.")
+                     .font(.caption)
+                     .foregroundColor(.secondary)
+                     .frame(height: 50)
+             }
+         }
+         .padding(12)
+         .frame(width: 320)
+         .background(VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)) // Glass effect
+         .cornerRadius(12)
+         .shadow(radius: 10)
+         .position(x: selectionRect.midX, y: selectionRect.maxY + 140) // Position BELOW selection
+    }
+    
+    // Helper for Blur
+    struct VisualEffectBlur: NSViewRepresentable {
+        var material: NSVisualEffectView.Material
+        var blendingMode: NSVisualEffectView.BlendingMode
+        
+        func makeNSView(context: Context) -> NSVisualEffectView {
+            let view = NSVisualEffectView()
+            view.material = material
+            view.blendingMode = blendingMode
+            view.state = .active
+            return view
+        }
+        func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+            nsView.material = material
+            nsView.blendingMode = blendingMode
         }
     }
     func searchImage(geometry: GeometryProxy) {
