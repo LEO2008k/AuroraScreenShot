@@ -250,13 +250,16 @@
             font-size: 5rem;
             font-weight: 800;
             margin: 0;
+            margin-bottom: 0.5rem;
+            line-height: 1.1;
+            letter-spacing: -0.03em;
+        }
+
+        .gradient-text {
             background: linear-gradient(to right, #22d3ee, #4ade80, #c084fc, #f472b6);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            letter-spacing: -0.03em;
-            line-height: 1.1;
-            margin-bottom: 0.5rem;
             animation: hue-rotate 10s infinite linear;
         }
 
@@ -535,7 +538,10 @@
         <!-- MAIN HERO -->
         <div class="glass-panel">
             <div class="liquid-pill">✨ Liquid Glass UI</div>
-            <h1>Aurora Screen Shot 🇨🇦</h1>
+            <h1>
+                <span class="gradient-text">Aurora Screen Shot</span>
+                <span style="font-size: 0.8em; vertical-align: middle;">🇨🇦</span>
+            </h1>
             <p class="subtitle">Next-gen screenshot tool with Local AI & Liquid Aura Design.</p>
 
             <div class="badges">
