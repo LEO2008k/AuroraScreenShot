@@ -23,7 +23,7 @@ struct PreferencesView: View {
                 }
             ShortcutsSettingsView()
                 .tabItem {
-                    Label("Shortcuts", systemImage: "keyboard")
+                    Label("Miscellaneous", systemImage: "keyboard")
                 }
             StampSettingsView()
                 .tabItem {

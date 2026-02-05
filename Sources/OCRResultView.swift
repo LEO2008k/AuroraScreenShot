@@ -46,6 +46,16 @@ struct OCRResultView: View {
                 .controlSize(.small)
                 .padding(.trailing, 8)
                 
+                Button(action: {
+                    NSApp.sendAction(Selector("showSettingsWindow:"), to: nil, from: nil)
+                }) {
+                    Image(systemName: "gearshape.fill")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Settings")
+                .padding(.trailing, 8)
+                
                 Button("Close", action: onClose)
             }
             .padding()
