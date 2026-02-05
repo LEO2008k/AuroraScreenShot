@@ -120,9 +120,15 @@ struct AIHelper {
         }
         let base64Image = pngData.base64EncodedString()
         
+        // Use custom prompt if set, otherwise use strict OCR prompt
+        let customPrompt = SettingsManager.shared.aiPrompt
+        let finalPrompt = customPrompt.isEmpty ? 
+            "Extract all text visible in this image. Output ONLY the raw text found. Do not describe the image. Do not add any conversational filler." : 
+            customPrompt
+        
         let body = OllamaRequest(
             model: model,
-            prompt: "Describe this image in detail.",
+            prompt: finalPrompt,
             images: [base64Image],
             stream: false
         )
@@ -183,7 +189,8 @@ struct AIHelper {
     
     func translateWithOllama(text: String, to language: String, completion: @escaping (Result<String, Error>) -> Void) {
         let host = SettingsManager.shared.ollamaHost
-        let model = SettingsManager.shared.ollamaModel
+        // Use dedicated Translation Model (e.g. llama3.1), NOT the Image Model (llava)
+        let model = SettingsManager.shared.ollamaTranslationModel
         
         guard let url = URL(string: "\(host)/api/generate") else {
             completion(.failure(NSError(domain: "OCRShot", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama Host URL"])))
