@@ -36,6 +36,16 @@ struct MacEditorView: NSViewRepresentable {
         textView.isRichText = false
         textView.font = font
         textView.textColor = textColor
+        // Force appearance to ensure background color is respected
+        // (Fixes issue where white background shows as black in Dark Mode)
+        if let srgb = backgroundColor.usingColorSpace(.sRGB) {
+            if srgb.brightnessComponent > 0.5 {
+                textView.appearance = NSAppearance(named: .aqua)
+            } else {
+                textView.appearance = NSAppearance(named: .darkAqua)
+            }
+        }
+        
         textView.delegate = context.coordinator
         textView.allowsUndo = true
         
@@ -56,6 +66,15 @@ struct MacEditorView: NSViewRepresentable {
         // Update background on TextView directly for better reliability
         textView.backgroundColor = backgroundColor
         textView.drawsBackground = true
+        
+        // Dynamic Appearance Update
+        if let srgb = backgroundColor.usingColorSpace(.sRGB) {
+            if srgb.brightnessComponent > 0.5 {
+                textView.appearance = NSAppearance(named: .aqua)
+            } else {
+                textView.appearance = NSAppearance(named: .darkAqua)
+            }
+        }
         
         // Ensure container matches (optional, but good for margins)
         nsView.layer?.backgroundColor = backgroundColor.cgColor

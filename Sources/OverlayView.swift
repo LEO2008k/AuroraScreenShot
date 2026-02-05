@@ -26,7 +26,7 @@ struct OverlayView: View {
     // Custom Tooltip State
     @State private var activeTooltip: String = ""
     
-    enum ToolMode { case selection, draw, line, arrow, redact }
+    enum ToolMode { case selection, draw, line, arrow, redact, pipette }
     enum ResizeHandle { case topLeft, topRight, bottomLeft, bottomRight, none }
     
     // Resize State
@@ -126,7 +126,7 @@ struct OverlayView: View {
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in
-                        handleDrag(value: value)
+                        handleDrag(value: value, geometry: geometry)
                     }
                     .onEnded { _ in
                         handleDragEnd(geometry: geometry)
@@ -136,8 +136,15 @@ struct OverlayView: View {
     }
     
     // Drag Logic extracted
-    func handleDrag(value: DragGesture.Value) {
+    func handleDrag(value: DragGesture.Value, geometry: GeometryProxy) {
         let point = value.location
+        
+        if viewModel.toolMode == .pipette {
+             // Pipette Logic
+             pickColor(at: point, geometry: geometry)
+             return
+        }
+
         if viewModel.toolMode == .selection {
             if startPoint == nil {
                 startPoint = value.startLocation
@@ -276,6 +283,33 @@ struct OverlayView: View {
     }
     
     // ... toolsBar, colorPalette, toolSettings, drawShape ... same logic
+    func pickColor(at point: CGPoint, geometry: GeometryProxy) {
+        let viewSize = geometry.size
+        let imageWidth = CGFloat(image.width)
+        let imageHeight = CGFloat(image.height)
+        
+        let widthRatio = viewSize.width / imageWidth
+        let heightRatio = viewSize.height / imageHeight
+        let scale = min(widthRatio, heightRatio)
+        
+        let scaledWidth = imageWidth * scale
+        let scaledHeight = imageHeight * scale
+        
+        let offsetX = (viewSize.width - scaledWidth) / 2
+        let offsetY = (viewSize.height - scaledHeight) / 2
+        
+        let imagePointX = (point.x - offsetX) / scale
+        let imagePointY = (point.y - offsetY) / scale
+        
+        if imagePointX >= 0 && imagePointX < imageWidth && imagePointY >= 0 && imagePointY < imageHeight {
+             if let bitmap = NSBitmapImageRep(cgImage: image) {
+                 if let color = bitmap.colorAt(x: Int(imagePointX), y: Int(imagePointY)) {
+                     viewModel.selectedColor = Color(color)
+                 }
+             }
+        }
+    }
+
     func toolsBar(geometry: GeometryProxy) -> some View {
          let rightSpace = geometry.size.width - selectionRect.maxX
          let leftSpace = selectionRect.minX
@@ -291,10 +325,32 @@ struct OverlayView: View {
              ActionIconBtn(icon: "arrow.up.right", label: "Arrow", isActive: viewModel.toolMode == .arrow, hoverText: "Arrow", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .arrow ? .selection : .arrow }
              ActionIconBtn(icon: "square.dashed", label: "Redact", isActive: viewModel.toolMode == .redact, hoverText: "Redact", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .redact ? .selection : .redact }
              
-             if [.draw, .line, .arrow, .redact].contains(viewModel.toolMode) {
+             // Pipette
+             ActionIconBtn(icon: "eyedropper", label: "Pipette", isActive: viewModel.toolMode == .pipette, hoverText: "Pick Color", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .pipette ? .selection : .pipette }
+             
+             if [.draw, .line, .arrow, .redact, .pipette].contains(viewModel.toolMode) {
                  Divider().frame(width: 20)
                  colorPalette()
-                 toolSettings()
+                 if viewModel.toolMode != .pipette {
+                    toolSettings()
+                 }
+                 // Set OCR Bg Button
+                 if viewModel.toolMode == .pipette {
+                     Button(action: {
+                         if let nsColor = NSColor(viewModel.selectedColor).usingColorSpace(.sRGB) {
+                             SettingsManager.shared.ocrEditorCustomColor = nsColor.toHex()
+                             SettingsManager.shared.ocrEditorBgMode = "Custom"
+                         }
+                     }) {
+                         VStack(spacing: 2) {
+                             Image(systemName: "doc.text.fill").font(.system(size: 14))
+                             Text("Set OCR Bg").font(.system(size: 8))
+                         }
+                         .frame(width: 50, height: 35)
+                         .background(Color.secondary.opacity(0.1))
+                         .cornerRadius(6)
+                     }.buttonStyle(.plain)
+                 }
              }
          }
          .padding(6).background(Color(NSColor.windowBackgroundColor).opacity(0.95)).cornerRadius(6).shadow(radius: 4)

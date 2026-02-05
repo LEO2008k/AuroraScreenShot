@@ -74,7 +74,7 @@ struct OCRResultView: View {
                              .foregroundColor(.secondary)
                          Spacer()
                          
-                         Text("\(text.count) chars")
+                         Text(getStats(text))
                              .font(.caption2)
                              .foregroundColor(text.count > 2000 ? .orange : .secondary)
                     }
@@ -83,7 +83,7 @@ struct OCRResultView: View {
                     MacEditorView(
                         text: $text, 
                         font: .systemFont(ofSize: CGFloat(fontSize)), 
-                        textColor: .textColor,
+                        textColor: computedTextColor,
                         backgroundColor: NSColor(editorBackgroundColor)
                     )
                     .padding(5)
@@ -105,6 +105,12 @@ struct OCRResultView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
+                            
+                            if !translatedText.isEmpty {
+                                Text(getStats(translatedText))
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
                         }
                         .padding(.horizontal)
                         
@@ -112,7 +118,7 @@ struct OCRResultView: View {
                             MacEditorView(
                                 text: $translatedText, 
                                 font: .systemFont(ofSize: CGFloat(fontSize)), 
-                                textColor: .textColor,
+                                textColor: computedTextColor,
                                 backgroundColor: NSColor(editorBackgroundColor)
                             )
                             .padding(5)
@@ -241,6 +247,27 @@ struct OCRResultView: View {
         }
     }
     
+    func getStats(_ text: String) -> String {
+        let charCount = text.count
+        let wordCount = text.split { $0.isWhitespace || $0.isNewline }.count
+        return "\(wordCount) words, \(charCount) chars"
+    }
+    
+    var computedTextColor: NSColor {
+        switch bgMode {
+        case "Dark": return .white
+        case "Light": return .black
+        case "Custom":
+            // Simple brightness check for custom color
+            if let color = Color(hex: customColorHex),
+               let nsColor = NSColor(color).usingColorSpace(.sRGB) {
+                return nsColor.brightnessComponent > 0.5 ? .black : .white
+            }
+            return .textColor
+        default: return .textColor
+        }
+    }
+
     func translateText() {
         isTranslating = true
         // Pass source and target

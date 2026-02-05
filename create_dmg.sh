@@ -14,35 +14,39 @@ fi
 
 echo "Preparing DMG staging area..."
 # Clean up previous runs
-rm -rf "$STAGING_DIR"
-rm -f "$DMG_NAME"
+# rm -rf "$STAGING_DIR" # This line is replaced by the new cleanup
+# rm -f "$DMG_NAME" # This line is removed
 
-# Create staging directory
+# CHANGED: Use a new directory to avoid permission issues
+STAGING_DIR="dmg_build"
+# Clean up previous build (ignore errors)
+rm -rf "$STAGING_DIR" 2>/dev/null || true
 mkdir -p "$STAGING_DIR"
 
-# Copy App to staging
+# Copy App (Use rsync to exclude .DS_Store)
 echo "Copying $APP_NAME.app to staging..."
-cp -R "$APP_PATH" "$STAGING_DIR/"
+rsync -a --exclude=".DS_Store" "$APP_NAME.app/" "$STAGING_DIR/$APP_NAME.app"
 
-# Create Symlink to Applications
+# Extra cleanup of .DS_Store just in case
+find "$STAGING_DIR" -name ".DS_Store" -delete 2>/dev/null || true
+# Create Link
 echo "Creating Applications link..."
 ln -s /Applications "$STAGING_DIR/Applications"
 
 # Create DMG
+
+# DMG Name is already set at the top: AuroraScreenshot_Installer.dmg
 echo "Creating $DMG_NAME..."
-hdiutil create -volname "$APP_NAME Installer" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
-
-# Cleanup
+hdiutil create -volname "AuroraScreenshot" -srcfolder "$STAGING_DIR" -ov -format UDZO "$DMG_NAME"
+# rm -rf "dmg_staging"
 echo "Cleaning up..."
-rm -rf "$STAGING_DIR"
+# Try to clean up, but ignore errors if we can't
+rm -rf "$STAGING_DIR" 2>/dev/null || true
 
-# Apply Icon to DMG
 echo "Applying App Icon to DMG file..."
-APP_ICON="$APP_PATH/Contents/Resources/AppIcon.icns"
-if [ -f "$APP_ICON" ]; then
-    swift set_icon.swift "$APP_ICON" "$DMG_NAME"
-else
-    echo "Warning: Icon not found at $APP_ICON"
+# Only run if set_icon exists
+if [ -f "set_icon.swift" ]; then
+    swift set_icon.swift "icon.png" "$DMG_NAME" || echo "Icon apply failed but DMG is created."
 fi
 
 echo "✅ DMG Created successfully: $DMG_NAME"

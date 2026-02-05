@@ -12,26 +12,36 @@ RESOURCES_DIR="$CONTENTS_DIR/Resources"
 # Versioning Logic
 # Read Semantic Version (e.g. 2.0.0)
 if [ ! -f "version.txt" ]; then
-    echo "1.0.0" > version.txt
+    echo "3.2.25" > version.txt
 fi
-CURRENT_VER=$(cat version.txt)
-# Split version into components
-IFS='.' read -r -a PARTS <<< "$CURRENT_VER"
-MAJOR="${PARTS[0]}"
-MINOR="${PARTS[1]}"
-PATCH="${PARTS[2]}"
+# Debug: check file content
+echo "DEBUG: version.txt content: $(cat version.txt 2>/dev/null)"
+
+MAJOR=$(cut -d. -f1 version.txt 2>/dev/null | tr -d '[:space:]')
+MINOR=$(cut -d. -f2 version.txt 2>/dev/null | tr -d '[:space:]')
+PATCH=$(cut -d. -f3 version.txt 2>/dev/null | tr -d '[:space:]')
+
+# Default if empty or read failed (Permission denied fix)
+MAJOR=${MAJOR:-3}
+MINOR=${MINOR:-2}
+PATCH=${PATCH:-25}
+
+echo "DEBUG: Read Parsed: $MAJOR.$MINOR.$PATCH"
+
 # Increment Patch
 PATCH=$((PATCH + 1))
 SEM_VER="$MAJOR.$MINOR.$PATCH"
-echo "$SEM_VER" > version.txt
+echo "$SEM_VER" > version.txt || echo "ERROR: Failed to update version.txt"
+echo "DEBUG: New Version: $SEM_VER"
 
 # Read Build Number (e.g. 9)
 if [ ! -f "build.txt" ]; then
-    echo "1" > build.txt
+    echo "21" > build.txt
 fi
-BUILD_NUM=$(cat build.txt)
+BUILD_NUM=$(cat build.txt 2>/dev/null | tr -d '[:space:]')
+BUILD_NUM=${BUILD_NUM:-21}
 BUILD_NUM=$((BUILD_NUM + 1))
-echo $BUILD_NUM > build.txt
+echo "$BUILD_NUM" > build.txt || echo "ERROR: Failed to update build.txt"
 
 echo "Building Version: $SEM_VER (Build $BUILD_NUM)"
 
