@@ -47,7 +47,7 @@ struct OCRResultView: View {
                 .padding(.trailing, 8)
                 
                 Button(action: {
-                    NSApp.sendAction(Selector("showSettingsWindow:"), to: nil, from: nil)
+                    NSApp.sendAction(Selector("openPreferences"), to: nil, from: nil)
                 }) {
                     Image(systemName: "gearshape.fill")
                         .foregroundColor(.secondary)
