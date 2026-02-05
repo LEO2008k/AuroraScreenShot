@@ -83,10 +83,10 @@ struct OCRResultView: View {
                     MacEditorView(
                         text: $text, 
                         font: .systemFont(ofSize: CGFloat(fontSize)), 
-                        textColor: .textColor
+                        textColor: .textColor,
+                        backgroundColor: NSColor(editorBackgroundColor)
                     )
                     .padding(5)
-                    .background(editorBackgroundColor)
                     .overlay(
                         RoundedRectangle(cornerRadius: 0)
                             .stroke(showCopyFlash && activeCopyTarget == .original ? 
@@ -112,10 +112,10 @@ struct OCRResultView: View {
                             MacEditorView(
                                 text: $translatedText, 
                                 font: .systemFont(ofSize: CGFloat(fontSize)), 
-                                textColor: .textColor
+                                textColor: .textColor,
+                                backgroundColor: NSColor(editorBackgroundColor)
                             )
                             .padding(5)
-                            .background(editorBackgroundColor)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 0)
                                     .stroke(showCopyFlash && activeCopyTarget == .translation ? 
