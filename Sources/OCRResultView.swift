@@ -57,6 +57,13 @@ struct OCRResultView: View {
                 .controlSize(.small)
                 .padding(.trailing, 8)
                 
+                Button(action: shareContent) {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .buttonStyle(.plain)
+                .help("Share Content")
+                .padding(.trailing, 8)
+                
                 Button("Close", action: onClose)
             }
             .padding()
@@ -289,6 +296,17 @@ struct OCRResultView: View {
                     self.showError = true
                 }
             }
+        }
+    }
+
+    func shareContent() {
+        let textToShare = text
+        let items = [textToShare] as [Any]
+        let picker = NSSharingServicePicker(items: items)
+        
+        if let window = NSApp.windows.first(where: { $0.isKeyWindow }),
+           let contentView = window.contentView {
+            picker.show(relativeTo: NSRect(x: contentView.bounds.midX, y: 0, width: 0, height: 0), of: contentView, preferredEdge: .minY)
         }
     }
 }

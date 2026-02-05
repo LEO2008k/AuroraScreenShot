@@ -94,7 +94,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(ocrItem)
         
         menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: ","))
+        // Preferences with dynamic shortcut
+        let prefShortcut = SettingsManager.shared.settingsShortcut
+        let prefItem = NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: KeyboardShortcuts.keyString(for: prefShortcut.keyCode))
+        prefItem.keyEquivalentModifierMask = prefShortcut.nsModifierFlags
+        menu.addItem(prefItem)
+        
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         
