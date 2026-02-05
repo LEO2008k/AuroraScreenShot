@@ -39,6 +39,7 @@ struct OCRResultView: View {
             Divider()
             
             // Content Area (Split)
+            // Content Area (Split)
             VSplitView {
                 // Top: Original Text
                 VStack(alignment: .leading, spacing: 5) {
@@ -47,14 +48,6 @@ struct OCRResultView: View {
                              .font(.caption)
                              .foregroundColor(.secondary)
                          Spacer()
-                         
-                         Button(action: copyText) {
-                             Image(systemName: "doc.on.doc")
-                                 .font(.caption)
-                         }
-                         .buttonStyle(.plain)
-                         .help("Copy Original Text")
-                         .padding(.trailing, 5)
                          
                          Text("\(text.count) chars")
                              .font(.caption2)
@@ -66,6 +59,13 @@ struct OCRResultView: View {
                         .font(.body)
                         .padding(5)
                         .background(Color(NSColor.controlBackgroundColor))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 0)
+                                .stroke(showCopyFlash && activeCopyTarget == .original ? 
+                                        LinearGradient(colors: [.cyan, .green, .purple], startPoint: .leading, endPoint: .trailing) : 
+                                        LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing), 
+                                        lineWidth: 2)
+                        )
                 }
                 .frame(minHeight: 100)
                 
@@ -77,16 +77,6 @@ struct OCRResultView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Button(action: {
-                                let pasteboard = NSPasteboard.general
-                                pasteboard.clearContents()
-                                pasteboard.setString(translatedText, forType: .string)
-                            }) {
-                                Image(systemName: "doc.on.doc")
-                                    .font(.caption)
-                            }
-                            .buttonStyle(.plain)
-                            .help("Copy Translation")
                         }
                         .padding(.horizontal)
                         
@@ -95,6 +85,13 @@ struct OCRResultView: View {
                                 .font(.body)
                                 .padding(5)
                                 .background(Color(NSColor.controlBackgroundColor))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 0)
+                                        .stroke(showCopyFlash && activeCopyTarget == .translation ? 
+                                                LinearGradient(colors: [.purple, .pink, .orange], startPoint: .leading, endPoint: .trailing) : 
+                                                LinearGradient(colors: [.clear], startPoint: .leading, endPoint: .trailing), 
+                                                lineWidth: 2)
+                                )
                             
                             if isTranslating {
                                 ProgressView("Translating via Ollama...")
@@ -106,7 +103,7 @@ struct OCRResultView: View {
                     .frame(minHeight: 100)
                 }
             }
-            .frame(minWidth: 450, minHeight: 400)
+            .frame(minWidth: 500, minHeight: 400) // Increased width for better button layout
             
             Divider()
             
@@ -114,24 +111,22 @@ struct OCRResultView: View {
             HStack {
                 // Language Controls
                 HStack(spacing: 8) {
-                    Text("From:")
-                        .font(.caption)
                     Picker("", selection: $sourceLanguage) {
                         Text("Auto").tag("Auto")
                         ForEach(SettingsManager.shared.translationLanguages, id: \.self) { lang in
                             Text(lang).tag(lang)
                         }
                     }
-                    .frame(width: 120)
+                    .frame(width: 100)
                     
-                    Text("To:")
-                        .font(.caption)
+                    Image(systemName: "arrow.right").font(.caption)
+                    
                     Picker("", selection: $targetLanguage) {
                         ForEach(SettingsManager.shared.translationLanguages, id: \.self) { lang in
                             Text(lang).tag(lang)
                         }
                     }
-                    .frame(width: 120)
+                    .frame(width: 100)
                 }
                 
                 Button(action: translateText) {
@@ -141,15 +136,24 @@ struct OCRResultView: View {
                 
                 Spacer()
                 
-                // Copy Original
-                Button(action: copyText) {
-                    Label("Copy Original", systemImage: "doc.on.doc")
+                // Copy Buttons
+                HStack(spacing: 12) {
+                    Button(action: { copyText(text, target: .original) }) {
+                        Text("Copy Original")
+                    }
+                    
+                    if !translatedText.isEmpty {
+                        Button(action: { copyText(translatedText, target: .translation) }) {
+                            Text("Copy Translation")
+                        }
+                        .buttonStyle(.borderedProminent) // Highlight result copy
+                    }
                 }
             }
             .padding()
             .background(Color(NSColor.windowBackgroundColor))
         }
-        .frame(minWidth: 600, minHeight: 500)
+        .frame(minWidth: 650, minHeight: 500)
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -175,10 +179,31 @@ struct OCRResultView: View {
         }
     }
     
-    func copyText() {
+    enum CopyTarget {
+        case original, translation, none
+    }
+    
+    @State private var showCopyFlash = false
+    @State private var activeCopyTarget: CopyTarget = .none
+    
+    func copyText(_ text: String, target: CopyTarget) {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+        
+        // Animation if enabled
+        if SettingsManager.shared.enableAurora {
+            activeCopyTarget = target
+            withAnimation(.easeIn(duration: 0.1)) {
+                showCopyFlash = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    showCopyFlash = false
+                }
+            }
+        }
     }
     
     func translateText() {
