@@ -7,6 +7,7 @@ struct OCRResultView: View {
     var onClose: () -> Void
     
     @State private var translatedText: String = ""
+    @State private var lastTranslatedInput: String = ""
     @State private var sourceLanguage: String = "Auto"
     @State private var targetLanguage: String = SettingsManager.shared.defaultTargetLanguage
     @State private var isTranslating = false
@@ -133,6 +134,10 @@ struct OCRResultView: View {
                     Label("Translate", systemImage: "globe")
                 }
                 .disabled(isTranslating || text.isEmpty)
+                .buttonStyle(.borderedProminent)
+                .shadow(color: (!translatedText.isEmpty && text != lastTranslatedInput && SettingsManager.shared.enableAurora) ? .cyan : .clear, radius: 5)
+                .scaleEffect((!translatedText.isEmpty && text != lastTranslatedInput) ? 1.05 : 1.0)
+                .animation(.easeInOut(duration: 0.3), value: text)
                 
                 Spacer()
                 
@@ -215,6 +220,7 @@ struct OCRResultView: View {
                 switch result {
                 case .success(let translated):
                     self.translatedText = translated
+                    self.lastTranslatedInput = self.text
                     HistoryManager.shared.addEntry(
                         original: self.text, 
                         translated: translated, 
