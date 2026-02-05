@@ -72,8 +72,9 @@ struct OCRResultView: View {
                     TextEditor(text: $text)
                         .font(.system(size: fontSize))
                         .padding(5)
+
                         .background(editorBackgroundColor)
-                        .scrollContentBackground(.hidden) // Important for custom background
+                        .transparentScrolling() // Important for custom background
                         .overlay(
                             RoundedRectangle(cornerRadius: 0)
                                 .stroke(showCopyFlash && activeCopyTarget == .original ? 
@@ -100,7 +101,7 @@ struct OCRResultView: View {
                                 .font(.system(size: fontSize))
                                 .padding(5)
                                 .background(editorBackgroundColor)
-                                .scrollContentBackground(.hidden)
+                                .transparentScrolling()
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 0)
                                         .stroke(showCopyFlash && activeCopyTarget == .translation ? 
@@ -278,5 +279,16 @@ class OCRResultWindowController: NSWindowController {
             self?.close()
         }
         self.window?.contentView = NSHostingView(rootView: view)
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func transparentScrolling() -> some View {
+        if #available(macOS 13.0, *) {
+            self.scrollContentBackground(.hidden)
+        } else {
+            self
+        }
     }
 }

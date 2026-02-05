@@ -44,7 +44,6 @@ struct AppearanceSettingsView: View {
     @State private var blurAmount = SettingsManager.shared.blurAmount
     @State private var enableAurora = SettingsManager.shared.enableAurora
     @State private var auroraIntensity = SettingsManager.shared.auroraIntensity
-    @State private var auroraIntensity = SettingsManager.shared.auroraIntensity
     @State private var auroraGlowSize = SettingsManager.shared.auroraGlowSize
     
     @State private var ocrFontSize = SettingsManager.shared.ocrFontSize
