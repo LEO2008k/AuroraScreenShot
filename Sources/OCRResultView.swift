@@ -38,6 +38,15 @@ struct OCRResultView: View {
                              .font(.caption)
                              .foregroundColor(.secondary)
                          Spacer()
+                         
+                         Button(action: copyText) {
+                             Image(systemName: "doc.on.doc")
+                                 .font(.caption)
+                         }
+                         .buttonStyle(.plain)
+                         .help("Copy Original Text")
+                         .padding(.trailing, 5)
+                         
                          Text("\(text.count) chars")
                              .font(.caption2)
                              .foregroundColor(text.count > 2000 ? .orange : .secondary)
