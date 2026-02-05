@@ -21,7 +21,7 @@ class HistoryManager: ObservableObject {
         cleanOldEntries()
     }
     
-    private var historyFileURL: URL? {
+    var historyFileURL: URL? {
         guard let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else { return nil }
         let auroraDir = appSupport.appendingPathComponent("AuroraScreenShot")
         // Ensure dir exists

@@ -851,20 +851,51 @@ struct HistorySettingsView: View {
     @State private var retentionHours = SettingsManager.shared.historyRetentionHours
     @ObservedObject var manager = HistoryManager.shared
     
+    @State private var isCustomMode = false
+    
     // Presets for the picker
     let presets = [3, 6, 12, 24, 48, 120, -1]
     
     var body: some View {
         Form {
-            Section(header: Text("Translation History")) {
-                Toggle("Save Translation History", isOn: $saveHistory)
+            Section(header: Text("Privacy & Storage")) {
+                Toggle("Enable History Saving", isOn: $saveHistory)
                     .onChange(of: saveHistory) { newValue in
                         SettingsManager.shared.saveHistory = newValue
                     }
                 
-                Text("Translations are saved locally in Application Support.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                if !saveHistory {
+                    Text("History is NOT saved. (Recommended for Privacy)")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                } else {
+                    Text("Translations are saved locally in Application Support.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                // File Location
+                if let url = manager.historyFileURL {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Storage Path:")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        HStack {
+                            Image(systemName: "internaldrive")
+                            Text(url.path)
+                                .font(.caption2)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .textSelection(.enabled)
+                            Spacer()
+                            Button("Show") {
+                                NSWorkspace.shared.activateFileViewerSelecting([url])
+                            }
+                            .font(.caption)
+                        }
+                    }
+                    .padding(.top, 4)
+                }
             }
             
             if saveHistory {
@@ -872,20 +903,19 @@ struct HistorySettingsView: View {
                     // Custom Binding for Picker
                     let pickerBinding = Binding<Int>(
                         get: {
+                            if isCustomMode { return 0 }
                             if presets.contains(retentionHours) { return retentionHours }
-                            return 0 // Custom
+                            return 0 // Default to custom if value is weird
                         },
                         set: { newValue in
-                            if newValue != 0 {
+                            if newValue == 0 {
+                                isCustomMode = true
+                                // If switching to custom, keep current hours but enable editing
+                            } else {
+                                isCustomMode = false
                                 retentionHours = newValue
                                 SettingsManager.shared.historyRetentionHours = newValue
                                 HistoryManager.shared.cleanOldEntries()
-                            } else {
-                                // User selected 'Custom...', ensure we start with a valid custom value if it was a preset before
-                                if presets.contains(retentionHours) {
-                                    retentionHours = 48 // Default custom start
-                                    SettingsManager.shared.historyRetentionHours = 48
-                                }
                             }
                         }
                     )
@@ -897,33 +927,32 @@ struct HistorySettingsView: View {
                         Text("24 Hours").tag(24)
                         Text("48 Hours").tag(48)
                         Text("5 Days").tag(120)
-                        Text("Never (Not Recommended)").tag(-1)
+                        Text("Keep Forever").tag(-1)
                         Divider()
                         Text("Custom...").tag(0)
                     }
                     
-                    // Show TextField if Custom (value not in presets)
-                    if !presets.contains(retentionHours) && retentionHours != -1 {
+                    // Show TextField if Custom Mode
+                    if isCustomMode {
                         HStack {
                             Text("Custom Retention:")
                             TextField("Hours", value: $retentionHours, format: .number)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .frame(width: 80)
                                 .onChange(of: retentionHours) { val in
+                                    var safeVal = val
                                     // Constraint: Max 336 hours (2 weeks)
-                                    if val > 336 { retentionHours = 336 }
+                                    if safeVal > 336 { safeVal = 336 }
                                     // Constraint: Min 1 hour
-                                    if val < 1 { retentionHours = 1 }
+                                    if safeVal < 1 { safeVal = 1 }
                                     
-                                    SettingsManager.shared.historyRetentionHours = retentionHours
+                                    if safeVal != val { retentionHours = safeVal }
+                                    
+                                    SettingsManager.shared.historyRetentionHours = safeVal
                                 }
                             Text("hours (Max 336)")
                                 .foregroundColor(.secondary)
                         }
-                    } else if retentionHours == 0 {
-                        // Edge case fix
-                        Text("Please select or enter a value.")
-                            .font(.caption).foregroundColor(.red)
                     }
                     
                     if retentionHours > 0 {
@@ -931,7 +960,7 @@ struct HistorySettingsView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     } else if retentionHours == -1 {
-                         Text("Warning: History will accumulate until disk is full.")
+                         Text("Warning: History will grow indefinitely.")
                             .font(.caption)
                             .foregroundColor(.orange)
                     }
@@ -963,6 +992,12 @@ struct HistorySettingsView: View {
         .onAppear {
             saveHistory = SettingsManager.shared.saveHistory
             retentionHours = SettingsManager.shared.historyRetentionHours
+            // Determine if custom mode
+            if !presets.contains(retentionHours) {
+                isCustomMode = true
+            } else {
+                isCustomMode = false
+            }
         }
     }
 }
