@@ -660,8 +660,9 @@ struct OverlayView: View {
         isAIThinking = true
         aiResponse = "Analyzing..."
         
-        // Use user query or default if empty
-        let prompt = aiQuery.isEmpty ? "Describe this image." : aiQuery
+        // Use user query, or Custom Prompt from settings, or default fallback
+        let settingsPrompt = SettingsManager.shared.aiPrompt
+        let prompt = aiQuery.isEmpty ? (settingsPrompt.isEmpty ? "Describe this image." : settingsPrompt) : aiQuery
         
         AIHelper.shared.analyzeImageWithOllama(image: cropped, customPrompt: prompt) { result in
              DispatchQueue.main.async {
