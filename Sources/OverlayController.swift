@@ -18,7 +18,7 @@ class OverlayController: NSWindowController {
     
     convenience init(image: CGImage, screen: NSScreen, isQuickOCR: Bool = false) {
         let screenRect = screen.frame
-        let window = NSWindow(
+        let window = EditingOverlayWindow(
             contentRect: screenRect,
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
@@ -110,5 +110,15 @@ class OverlayController: NSWindowController {
             NSEvent.removeMonitor(monitor)
         }
         window?.close()
+    }
+}
+
+// Custom Window subclass to allow Key Window status even with .borderless style
+class EditingOverlayWindow: NSWindow {
+    override var canBecomeKey: Bool {
+        return true
+    }
+    override var canBecomeMain: Bool {
+        return true
     }
 }

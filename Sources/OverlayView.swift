@@ -695,7 +695,7 @@ struct OverlayView: View {
                  Spacer()
                  
                  // Reset Button
-                 if !aiResponse.isEmpty {
+                 if !aiResponse.isEmpty || !aiQuery.isEmpty {
                      Button(action: { 
                          aiResponse = ""
                          aiQuery = ""
@@ -703,7 +703,7 @@ struct OverlayView: View {
                          isInputFocused = true
                      }) {
                          Image(systemName: "arrow.counterclockwise").foregroundColor(.white.opacity(0.8))
-                     }.buttonStyle(.plain).help("New Chat")
+                     }.buttonStyle(.plain).help("New Chat / Reset")
                      Divider().frame(height: 12).padding(.horizontal, 4)
                  }
                  
@@ -782,7 +782,7 @@ struct OverlayView: View {
              isInputFocused = true // Auto-focus when opened
          }
     }
-    }
+
     
     // Helper for Blur
     struct VisualEffectBlur: NSViewRepresentable {
@@ -870,11 +870,26 @@ struct OverlayView: View {
     
     @ViewBuilder func auroraGlow() -> some View {
         let glowSize = CGFloat(SettingsManager.shared.auroraGlowSize)
-        RoundedRectangle(cornerRadius: 4).strokeBorder(
-                AngularGradient(gradient: Gradient(colors: [.blue, .purple, .pink, .cyan, .blue]), center: .center, angle: .degrees(auroraRotation)), lineWidth: 4
-            ).frame(width: selectionRect.width + glowSize, height: selectionRect.height + glowSize).position(x: selectionRect.midX, y: selectionRect.midY)
-            .blur(radius: glowSize * 0.6).opacity(0.8)
-            .onAppear { withAnimation(Animation.linear(duration: 3).repeatForever(autoreverses: false)) { auroraRotation = 360 } }
+        ZStack {
+            // Inner Core
+            RoundedRectangle(cornerRadius: 4).strokeBorder(
+                AngularGradient(gradient: Gradient(colors: [.blue, .purple, .pink, .cyan, .blue]), center: .center, angle: .degrees(auroraRotation)), lineWidth: 6
+            )
+            .frame(width: selectionRect.width + glowSize, height: selectionRect.height + glowSize)
+            .position(x: selectionRect.midX, y: selectionRect.midY)
+            .blur(radius: glowSize * 0.4)
+            .opacity(1.0)
+            
+            // Outer Glow
+            RoundedRectangle(cornerRadius: 4).strokeBorder(
+                AngularGradient(gradient: Gradient(colors: [.blue, .purple, .pink, .cyan, .blue]), center: .center, angle: .degrees(auroraRotation)), lineWidth: 10
+            )
+            .frame(width: selectionRect.width + glowSize, height: selectionRect.height + glowSize)
+            .position(x: selectionRect.midX, y: selectionRect.midY)
+            .blur(radius: glowSize)
+            .opacity(0.6)
+        }
+        .onAppear { withAnimation(Animation.linear(duration: 3).repeatForever(autoreverses: false)) { auroraRotation = 360 } }
     }
 }
 
