@@ -153,6 +153,7 @@ class SettingsManager {
     
     private let kRepeatShortcut = "RepeatShortcut"
     private let kCancelShortcut = "CancelShortcut"
+    private let kSettingsShortcut = "SettingsShortcut"
     
     var repeatShortcut: Shortcut {
         get {
@@ -165,6 +166,21 @@ class SettingsManager {
         set {
             if let data = try? JSONEncoder().encode(newValue) {
                 UserDefaults.standard.set(data, forKey: kRepeatShortcut)
+            }
+        }
+    }
+    
+    var settingsShortcut: Shortcut {
+        get {
+            if let data = UserDefaults.standard.data(forKey: kSettingsShortcut),
+               let saved = try? JSONDecoder().decode(Shortcut.self, from: data) {
+                return saved
+            }
+            return Shortcut(keyCode: 46, modifierFlags: 524288) // Default: Option+M (Key 46)
+        }
+        set {
+            if let data = try? JSONEncoder().encode(newValue) {
+                UserDefaults.standard.set(data, forKey: kSettingsShortcut)
             }
         }
     }

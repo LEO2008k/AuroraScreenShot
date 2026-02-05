@@ -28,6 +28,12 @@ class HotKeyManager {
     private var cancelKey: UInt16 = 53
     private var cancelMods: NSEvent.ModifierFlags = []
     
+    // Settings: Default Option+M
+    private var settingsKey: UInt16 = 46
+    private var settingsMods: NSEvent.ModifierFlags = [.option]
+    
+    var onSettingsTriggered: (() -> Void)?
+    
     func startMonitoring() {
         stopMonitoring()
         
@@ -79,6 +85,11 @@ class HotKeyManager {
         if event.keyCode == cancelKey && flags.contains(cancelMods) && flags.subtracting(cancelMods).isEmpty {
             onCancelTriggered?()
         }
+        
+        // Check Settings
+        if event.keyCode == settingsKey && flags.contains(settingsMods) && flags.subtracting(settingsMods).isEmpty {
+            onSettingsTriggered?()
+        }
     }
     
     func updateScreenshotHotKey(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {
@@ -99,5 +110,10 @@ class HotKeyManager {
     func updateCancelHotKey(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {
         self.cancelKey = keyCode
         self.cancelMods = modifiers
+    }
+    
+    func updateSettingsHotKey(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {
+        self.settingsKey = keyCode
+        self.settingsMods = modifiers
     }
 }

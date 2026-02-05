@@ -394,6 +394,7 @@ struct GeneralSettingsView: View {
 struct ShortcutsSettingsView: View {
     @State private var screenshotShortcut = SettingsManager.shared.shortcut
     @State private var ocrShortcut = SettingsManager.shared.ocrShortcut
+    @State private var settingsShortcut = SettingsManager.shared.settingsShortcut
     @State private var repeatShortcut = SettingsManager.shared.repeatShortcut
     @State private var cancelShortcut = SettingsManager.shared.cancelShortcut
     
@@ -407,6 +408,11 @@ struct ShortcutsSettingsView: View {
                 
                 ShortcutRecorderRow(label: "Quick OCR", shortcut: $ocrShortcut) { new in
                     SettingsManager.shared.ocrShortcut = new
+                    NotificationCenter.default.post(name: Notification.Name("HotkeyChanged"), object: nil)
+                }
+                
+                ShortcutRecorderRow(label: "Open Menu", shortcut: $settingsShortcut) { new in
+                    SettingsManager.shared.settingsShortcut = new
                     NotificationCenter.default.post(name: Notification.Name("HotkeyChanged"), object: nil)
                 }
             }

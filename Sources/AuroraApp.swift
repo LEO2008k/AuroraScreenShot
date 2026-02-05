@@ -118,6 +118,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Repeat Hotkey
         let repSc = SettingsManager.shared.repeatShortcut
         HotKeyManager.shared.updateRepeatHotKey(keyCode: repSc.keyCode, modifiers: repSc.nsModifierFlags)
+
+        // Settings Hotkey
+        let setSc = SettingsManager.shared.settingsShortcut
+        HotKeyManager.shared.updateSettingsHotKey(keyCode: setSc.keyCode, modifiers: setSc.nsModifierFlags)
         
         // Cancel Hotkey
         let canSc = SettingsManager.shared.cancelShortcut
@@ -132,6 +136,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HotKeyManager.shared.onOCRTriggered = { [weak self] in
             DispatchQueue.main.async {
                 self?.captureOCR()
+            }
+        }
+        
+        HotKeyManager.shared.onSettingsTriggered = { [weak self] in
+            DispatchQueue.main.async {
+                self?.openPreferences() // Bring to front
+                NSApp.activate(ignoringOtherApps: true)
             }
         }
         

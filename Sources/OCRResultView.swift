@@ -32,7 +32,18 @@ struct OCRResultView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
+            // Header
             HStack {
+                Button(action: {
+                    NSApp.sendAction(Selector("openPreferences"), to: nil, from: nil)
+                }) {
+                    Image(systemName: "gearshape.fill")
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Settings")
+                .padding(.trailing, 4)
+                
                 Text("OCR Editor")
                     .font(.headline)
                     .foregroundColor(.secondary)
@@ -44,16 +55,6 @@ struct OCRResultView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .padding(.trailing, 8)
-                
-                Button(action: {
-                    NSApp.sendAction(Selector("openPreferences"), to: nil, from: nil)
-                }) {
-                    Image(systemName: "gearshape.fill")
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-                .help("Settings")
                 .padding(.trailing, 8)
                 
                 Button("Close", action: onClose)
@@ -81,6 +82,7 @@ struct OCRResultView: View {
                     
                     TextEditor(text: $text)
                         .font(.system(size: fontSize))
+                        .foregroundColor(bgMode == "Custom" || bgMode == "Dark" ? .white : (bgMode == "Light" ? .black : .primary))
                         .padding(5)
 
                         .background(editorBackgroundColor)
@@ -109,6 +111,7 @@ struct OCRResultView: View {
                         ZStack {
                             TextEditor(text: $translatedText)
                                 .font(.system(size: fontSize))
+                                .foregroundColor(bgMode == "Custom" || bgMode == "Dark" ? .white : (bgMode == "Light" ? .black : .primary))
                                 .padding(5)
                                 .background(editorBackgroundColor)
                                 .transparentScrolling()
