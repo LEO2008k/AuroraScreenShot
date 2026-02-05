@@ -16,9 +16,9 @@ struct OCRResultView: View {
     @State private var showLengthWarning = false
     
     // Appearance Settings
-    @AppStorage("ocrFontSize") var fontSize: Double = 14.0
-    @AppStorage("ocrEditorBgMode") var bgMode: String = "System"
-    @AppStorage("ocrEditorCustomColor") var customColorHex: String = "#1E1E1E"
+    @AppStorage("OCRFontSize") var fontSize: Double = 14.0
+    @AppStorage("OCREditorBgMode") var bgMode: String = "System"
+    @AppStorage("OCREditorCustomColor") var customColorHex: String = "#1E1E1E"
     
     var editorBackgroundColor: Color {
         switch bgMode {
