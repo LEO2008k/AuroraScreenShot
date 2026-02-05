@@ -50,25 +50,19 @@ extension Color {
     }
 
     func toHex() -> String? {
-        // Convert SwiftUI Color to NSColor
-        let nsColor = NSColor(self)
-        
-        guard let components = nsColor.cgColor.components, components.count >= 3 else {
+        // Universal Fix: Force conversion to sRGB color space
+        // This handles P3, Display P3, and other monitor profiles correctly
+        // by mapping them to the standard web sRGB hex format.
+        guard let srgbColor = NSColor(self).usingColorSpace(.sRGB) else {
             return nil
         }
-        let r = Float(components[0])
-        let g = Float(components[1])
-        let b = Float(components[2])
-        var a = Float(1.0)
         
-        if components.count >= 4 {
-            a = Float(components[3])
-        }
-
-        if a != 1.0 {
-            return String(format: "#%02lX%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255), lroundf(a * 255))
-        } else {
-            return String(format: "#%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255))
-        }
+        let red = Int(round(srgbColor.redComponent * 0xFF))
+        let green = Int(round(srgbColor.greenComponent * 0xFF))
+        let blue = Int(round(srgbColor.blueComponent * 0xFF))
+        
+        // Handle alpha if needed (though hex usually ignores it for simple prefs)
+        // We stick to standard #RRGGBB for compatibility
+        return String(format: "#%02X%02X%02X", red, green, blue)
     }
 }
