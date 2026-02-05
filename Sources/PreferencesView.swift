@@ -44,7 +44,12 @@ struct AppearanceSettingsView: View {
     @State private var blurAmount = SettingsManager.shared.blurAmount
     @State private var enableAurora = SettingsManager.shared.enableAurora
     @State private var auroraIntensity = SettingsManager.shared.auroraIntensity
+    @State private var auroraIntensity = SettingsManager.shared.auroraIntensity
     @State private var auroraGlowSize = SettingsManager.shared.auroraGlowSize
+    
+    @State private var ocrFontSize = SettingsManager.shared.ocrFontSize
+    @State private var ocrBgMode = SettingsManager.shared.ocrEditorBgMode
+    @State private var ocrCustomColor = Color.black
     
     var body: some View {
         Form {
@@ -104,6 +109,34 @@ struct AppearanceSettingsView: View {
                         .foregroundColor(.secondary)
                 }
             }
+            
+            Section(header: Text("OCR Editor Appearance")) {
+                HStack {
+                    Text("Font Size:")
+                    Slider(value: $ocrFontSize, in: 10...32, step: 1)
+                        .onChange(of: ocrFontSize) { val in
+                            SettingsManager.shared.ocrFontSize = val
+                        }
+                    Text("\(Int(ocrFontSize)) pt")
+                }
+                
+                Picker("Background:", selection: $ocrBgMode) {
+                    Text("System Default").tag("System")
+                    Text("Dark").tag("Dark")
+                    Text("Light").tag("Light")
+                    Text("Custom Color").tag("Custom")
+                }
+                .onChange(of: ocrBgMode) { val in
+                    SettingsManager.shared.ocrEditorBgMode = val
+                }
+                
+                if ocrBgMode == "Custom" {
+                    ColorPicker("Custom Background", selection: $ocrCustomColor)
+                        .onChange(of: ocrCustomColor) { val in
+                            SettingsManager.shared.ocrEditorCustomColor = val.toHex() ?? "#1E1E1E"
+                        }
+                }
+            }
         }
         .padding()
         .onAppear {
@@ -112,6 +145,12 @@ struct AppearanceSettingsView: View {
             enableAurora = SettingsManager.shared.enableAurora
             auroraIntensity = SettingsManager.shared.auroraIntensity
             auroraGlowSize = SettingsManager.shared.auroraGlowSize
+            
+            ocrFontSize = SettingsManager.shared.ocrFontSize
+            ocrBgMode = SettingsManager.shared.ocrEditorBgMode
+            if let col = Color(hex: SettingsManager.shared.ocrEditorCustomColor) {
+               ocrCustomColor = col
+            }
         }
     }
 }
@@ -998,6 +1037,56 @@ struct HistorySettingsView: View {
             } else {
                 isCustomMode = false
             }
+        }
+    }
+}
+
+extension Color {
+    init?(hex: String) {
+        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
+
+        var rgb: UInt64 = 0
+        var r: CGFloat = 0.0
+        var g: CGFloat = 0.0
+        var b: CGFloat = 0.0
+        var a: CGFloat = 1.0
+
+        let length = hexSanitized.count
+        guard Scanner(string: hexSanitized).scanHexInt64(&rgb) else { return nil }
+
+        if length == 6 {
+            r = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
+            g = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
+            b = CGFloat(rgb & 0x0000FF) / 255.0
+
+        } else if length == 8 {
+            r = CGFloat((rgb & 0xFF000000) >> 24) / 255.0
+            g = CGFloat((rgb & 0x00FF0000) >> 16) / 255.0
+            b = CGFloat((rgb & 0x0000FF00) >> 8) / 255.0
+            a = CGFloat(rgb & 0x000000FF) / 255.0
+        } else {
+            return nil
+        }
+        self.init(.sRGB, red: r, green: g, blue: b, opacity: a)
+    }
+
+    func toHex() -> String? {
+        guard let components = NSColor(self).cgColor.components, components.count >= 3 else {
+            return nil
+        }
+        let r = Float(components[0])
+        let g = Float(components[1])
+        let b = Float(components[2])
+        var a = Float(1.0)
+        if components.count >= 4 {
+            a = Float(components[3])
+        }
+
+        if a != 1.0 {
+            return String(format: "#%02lX%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255), lroundf(a * 255))
+        } else {
+            return String(format: "#%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255))
         }
     }
 }

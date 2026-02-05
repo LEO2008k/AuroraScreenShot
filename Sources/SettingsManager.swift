@@ -332,6 +332,29 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kHistoryRetentionHours) }
     }
     
+    // OCR Editor Appearance
+    private let kOCRFontSize = "OCRFontSize"
+    private let kOCREditorBgMode = "OCREditorBgMode" // "System", "Dark", "Light", "Custom"
+    private let kOCREditorCustomColor = "OCREditorCustomColor"
+
+    var ocrFontSize: Double {
+        get { 
+            let val = UserDefaults.standard.double(forKey: kOCRFontSize)
+            return val == 0 ? 13.0 : val
+        }
+        set { UserDefaults.standard.set(newValue, forKey: kOCRFontSize) }
+    }
+    
+    var ocrEditorBgMode: String {
+        get { UserDefaults.standard.string(forKey: kOCREditorBgMode) ?? "System" }
+        set { UserDefaults.standard.set(newValue, forKey: kOCREditorBgMode) }
+    }
+    
+    var ocrEditorCustomColor: String {
+        get { UserDefaults.standard.string(forKey: kOCREditorCustomColor) ?? "#1E1E1E" }
+        set { UserDefaults.standard.set(newValue, forKey: kOCREditorCustomColor) }
+    }
+    
     func promptForSaveDirectory() {
         let openPanel = NSOpenPanel()
         openPanel.canChooseFiles = false

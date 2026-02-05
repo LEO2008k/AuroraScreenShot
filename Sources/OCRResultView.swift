@@ -15,6 +15,20 @@ struct OCRResultView: View {
     @State private var errorMessage = ""
     @State private var showLengthWarning = false
     
+    // Appearance Settings
+    @AppStorage("ocrFontSize") var fontSize: Double = 14.0
+    @AppStorage("ocrEditorBgMode") var bgMode: String = "System"
+    @AppStorage("ocrEditorCustomColor") var customColorHex: String = "#1E1E1E"
+    
+    var editorBackgroundColor: Color {
+        switch bgMode {
+        case "Dark": return Color.black
+        case "Light": return Color.white
+        case "Custom": return Color(hex: customColorHex) ?? Color(NSColor.controlBackgroundColor)
+        default: return Color(NSColor.controlBackgroundColor)
+        }
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -40,7 +54,6 @@ struct OCRResultView: View {
             Divider()
             
             // Content Area (Split)
-            // Content Area (Split)
             VSplitView {
                 // Top: Original Text
                 VStack(alignment: .leading, spacing: 5) {
@@ -57,9 +70,10 @@ struct OCRResultView: View {
                     .padding(.horizontal)
                     
                     TextEditor(text: $text)
-                        .font(.body)
+                        .font(.system(size: fontSize))
                         .padding(5)
-                        .background(Color(NSColor.controlBackgroundColor))
+                        .background(editorBackgroundColor)
+                        .scrollContentBackground(.hidden) // Important for custom background
                         .overlay(
                             RoundedRectangle(cornerRadius: 0)
                                 .stroke(showCopyFlash && activeCopyTarget == .original ? 
@@ -83,9 +97,10 @@ struct OCRResultView: View {
                         
                         ZStack {
                             TextEditor(text: $translatedText)
-                                .font(.body)
+                                .font(.system(size: fontSize))
                                 .padding(5)
-                                .background(Color(NSColor.controlBackgroundColor))
+                                .background(editorBackgroundColor)
+                                .scrollContentBackground(.hidden)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 0)
                                         .stroke(showCopyFlash && activeCopyTarget == .translation ? 
