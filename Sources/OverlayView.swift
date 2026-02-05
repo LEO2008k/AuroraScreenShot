@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct DrawingShape {
-    enum ShapeType { case freestyle, line, arrow, rect }
+    enum ShapeType { case freestyle, line, arrow, rect, strokeRect }
     var type: ShapeType
     var points: [CGPoint]       // used for freestyle
     var start: CGPoint          // used for line, arrow, rect
@@ -26,8 +26,8 @@ struct OverlayView: View {
     // Custom Tooltip State
     @State private var activeTooltip: String = ""
     
-    enum ToolMode { case selection, draw, line, arrow, redact, pipette }
-    enum ResizeHandle { case topLeft, topRight, bottomLeft, bottomRight, none }
+    enum ToolMode { case selection, draw, line, arrow, redact, highlight, pipette }
+    enum ResizeHandle { case topLeft, topRight, bottomLeft, bottomRight, top, bottom, left, right, none }
     
     // Resize State
     @State private var currentResizeHandle: ResizeHandle = .none
@@ -165,13 +165,20 @@ struct OverlayView: View {
             } else {
                 currentDrawing?.points.append(point)
             }
-        } else if [.line, .arrow, .redact].contains(viewModel.toolMode) {
+        } else if [.line, .arrow, .redact, .highlight].contains(viewModel.toolMode) {
             if startPoint == nil { startPoint = value.startLocation }
             let start = startPoint!
             
-            let type: DrawingShape.ShapeType = (viewModel.toolMode == .line) ? .line : (viewModel.toolMode == .arrow ? .arrow : .rect)
+            var type: DrawingShape.ShapeType
+            switch viewModel.toolMode {
+                case .line: type = .line
+                case .arrow: type = .arrow
+                case .redact: type = .rect
+                case .highlight: type = .strokeRect
+                default: type = .freestyle
+            }
             
-            currentDrawing = DrawingShape(type: type, points: [], start: start, end: point, color: viewModel.selectedColor, lineWidth: viewModel.toolMode == .redact ? 0 : viewModel.strokeWidth)
+            currentDrawing = DrawingShape(type: type, points: [], start: start, end: point, color: viewModel.selectedColor, lineWidth: (viewModel.toolMode == .redact || viewModel.toolMode == .highlight) ? viewModel.strokeWidth : viewModel.strokeWidth)
         }
     }
     
@@ -322,12 +329,12 @@ struct OverlayView: View {
              ActionIconBtn(icon: "pencil.tip", label: "Pen", isActive: viewModel.toolMode == .draw, hoverText: "Pen", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .draw ? .selection : .draw }
              ActionIconBtn(icon: "line.diagonal", label: "Line", isActive: viewModel.toolMode == .line, hoverText: "Line", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .line ? .selection : .line }
              ActionIconBtn(icon: "arrow.up.right", label: "Arrow", isActive: viewModel.toolMode == .arrow, hoverText: "Arrow", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .arrow ? .selection : .arrow }
-             ActionIconBtn(icon: "square.dashed", label: "Redact", isActive: viewModel.toolMode == .redact, hoverText: "Redact", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .redact ? .selection : .redact }
+             ActionIconBtn(icon: "square.dashed", label: "Redact", isActive: viewModel.toolMode == .redact, hoverText: "Redact (Fill)", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .redact ? .selection : .redact }
+             ActionIconBtn(icon: "rectangle", label: "Box", isActive: viewModel.toolMode == .highlight, hoverText: "Highlight Box", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .highlight ? .selection : .highlight }
              
              // Pipette
              ActionIconBtn(icon: "eyedropper", label: "Pipette", isActive: viewModel.toolMode == .pipette, hoverText: "Pick Color", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .pipette ? .selection : .pipette }
-             
-             if [.draw, .line, .arrow, .redact, .pipette].contains(viewModel.toolMode) {
+                          if [.draw, .line, .arrow, .redact, .highlight, .pipette].contains(viewModel.toolMode) {
                  Divider().frame(width: 20)
                  colorPalette()
                  if viewModel.toolMode != .pipette {
@@ -387,10 +394,13 @@ struct OverlayView: View {
                  Path { p in p.move(to: shape.start); p.addLine(to: shape.end) }
                  .stroke(shape.color, style: StrokeStyle(lineWidth: shape.lineWidth, lineCap: .round, lineJoin: .round))
                  ArrowHeadShape(start: shape.start, end: shape.end, lineWidth: shape.lineWidth).fill(shape.color)
-             } else if shape.type == .rect {
-                 let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
-                 Rectangle().fill(shape.color).frame(width: r.width, height: r.height).position(x: r.midX, y: r.midY)
-             }
+              } else if shape.type == .rect {
+                  let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
+                  Rectangle().fill(shape.color).frame(width: r.width, height: r.height).position(x: r.midX, y: r.midY)
+              } else if shape.type == .strokeRect {
+                  let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
+                  Rectangle().stroke(shape.color, lineWidth: shape.lineWidth).frame(width: r.width, height: r.height).position(x: r.midX, y: r.midY)
+              }
         }
     }
     
@@ -412,7 +422,12 @@ struct OverlayView: View {
             (.topLeft, CGPoint(x: selectionRect.minX, y: selectionRect.minY)),
             (.topRight, CGPoint(x: selectionRect.maxX, y: selectionRect.minY)),
             (.bottomLeft, CGPoint(x: selectionRect.minX, y: selectionRect.maxY)),
-            (.bottomRight, CGPoint(x: selectionRect.maxX, y: selectionRect.maxY))
+            (.bottomRight, CGPoint(x: selectionRect.maxX, y: selectionRect.maxY)),
+            // Edges
+            (.top, CGPoint(x: selectionRect.midX, y: selectionRect.minY)),
+            (.bottom, CGPoint(x: selectionRect.midX, y: selectionRect.maxY)),
+            (.left, CGPoint(x: selectionRect.minX, y: selectionRect.midY)),
+            (.right, CGPoint(x: selectionRect.maxX, y: selectionRect.midY))
         ]
         for (h, p) in handles { if hypot(point.x-p.x, point.y-p.y) <= 20 { return h } }
         return .none
@@ -425,6 +440,10 @@ struct OverlayView: View {
         case .topRight: r = CGRect(x: min(point.x, r.minX), y: min(point.y, r.maxY), width: abs(point.x-r.minX), height: abs(point.y-r.maxY))
         case .bottomLeft: r = CGRect(x: min(point.x, r.maxX), y: min(point.y, r.minY), width: abs(point.x-r.maxX), height: abs(point.y-r.minY))
         case .bottomRight: r = CGRect(x: min(point.x, r.minX), y: min(point.y, r.minY), width: abs(point.x-r.minX), height: abs(point.y-r.minY))
+        case .top: r = CGRect(x: r.minX, y: min(point.y, r.maxY), width: r.width, height: abs(point.y - r.maxY))
+        case .bottom: r = CGRect(x: r.minX, y: min(point.y, r.minY), width: r.width, height: abs(point.y - r.minY))
+        case .left: r = CGRect(x: min(point.x, r.maxX), y: r.minY, width: abs(point.x - r.maxX), height: r.height)
+        case .right: r = CGRect(x: min(point.x, r.minX), y: r.minY, width: abs(point.x - r.minX), height: r.height)
         default: break
         }
         selectionRect = r
@@ -434,9 +453,11 @@ struct OverlayView: View {
         if selectionRect == .zero { return AnyView(EmptyView()) }
         return AnyView(ForEach([
             CGPoint(x: selectionRect.minX, y: selectionRect.minY), CGPoint(x: selectionRect.maxX, y: selectionRect.minY),
-            CGPoint(x: selectionRect.minX, y: selectionRect.maxY), CGPoint(x: selectionRect.maxX, y: selectionRect.maxY)
+            CGPoint(x: selectionRect.minX, y: selectionRect.maxY), CGPoint(x: selectionRect.maxX, y: selectionRect.maxY),
+            CGPoint(x: selectionRect.midX, y: selectionRect.minY), CGPoint(x: selectionRect.midX, y: selectionRect.maxY),
+            CGPoint(x: selectionRect.minX, y: selectionRect.midY), CGPoint(x: selectionRect.maxX, y: selectionRect.midY)
         ], id: \.x) { p in
-            Circle().fill(Color.white).frame(width: 12, height: 12).overlay(Circle().stroke(Color.black)).position(p)
+            Circle().fill(Color.white).frame(width: 8, height: 8).overlay(Circle().stroke(Color.black, lineWidth: 1)).shadow(radius: 2).position(p)
         })
     }
     
@@ -481,6 +502,10 @@ struct OverlayView: View {
                 } else if shape.type == .rect {
                     let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
                     ctx?.fill(CGRect(x: r.minX*scaleX, y: CGFloat(image.height)-(r.maxY*scaleY), width: r.width*scaleX, height: r.height*scaleY))
+                } else if shape.type == .strokeRect {
+                    let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
+                     ctx?.setLineWidth(shape.lineWidth * scaleX)
+                     ctx?.stroke(CGRect(x: r.minX*scaleX, y: CGFloat(image.height)-(r.maxY*scaleY), width: r.width*scaleX, height: r.height*scaleY))
                 }
             }
             
@@ -696,10 +721,11 @@ struct OverlayView: View {
     }
     
     @ViewBuilder func auroraGlow() -> some View {
+        let glowSize = CGFloat(SettingsManager.shared.auroraGlowSize)
         RoundedRectangle(cornerRadius: 4).strokeBorder(
                 AngularGradient(gradient: Gradient(colors: [.blue, .purple, .pink, .cyan, .blue]), center: .center, angle: .degrees(auroraRotation)), lineWidth: 4
-            ).frame(width: selectionRect.width+10, height: selectionRect.height+10).position(x: selectionRect.midX, y: selectionRect.midY)
-            .blur(radius: 8).opacity(0.8)
+            ).frame(width: selectionRect.width + glowSize, height: selectionRect.height + glowSize).position(x: selectionRect.midX, y: selectionRect.midY)
+            .blur(radius: glowSize * 0.6).opacity(0.8)
             .onAppear { withAnimation(Animation.linear(duration: 3).repeatForever(autoreverses: false)) { auroraRotation = 360 } }
     }
 }
