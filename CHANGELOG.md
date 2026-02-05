@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.34] - 2026-02-05
+
+### Added
+
+- **Interactive AI Chat**: Floating "Ask AI" panel allows you to chat with Ollama about the selected screen area (e.g., "Explain this code", "Translate this").
+- **Highlight Tool**: New "Box" tool for drawing empty rectangles to highlight content.
+- **Enhanced Resizing**: Added resize handles to the edges (Top, Bottom, Left, Right) for easier adjustment.
+- **Pipette Indicator**: Clear visual feedback showing the active color picked by the pipette.
+
+### Changed
+
+- **Aurora Glow**: The glow effect size now dynamically responds to the slider in Preferences.
+- **OCR Editor**: Improved scrollbar visibility for long text content.
+
+### Fixed
+
+- **Code Cleanup**: Resolved duplicate extension warnings and selector safety issues.
+
 ## [2.0.34] - 2026-02-03
 
 ### Added
