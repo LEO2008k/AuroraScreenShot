@@ -22,6 +22,15 @@ struct OCRResultView: View {
                     .font(.headline)
                     .foregroundColor(.secondary)
                 Spacer()
+                Button(action: {
+                    HistoryWindowController.shared.show()
+                }) {
+                    Label("History", systemImage: "clock")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .padding(.trailing, 8)
+                
                 Button("Close", action: onClose)
             }
             .padding()
