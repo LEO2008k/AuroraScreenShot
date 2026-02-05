@@ -589,21 +589,25 @@ struct AnimatedLogoText: View {
     @State private var hueRotation: Double = 0
     
     var body: some View {
-        Text("Aurora Screen Shot 🇨🇦")
-            .font(.title.bold())
-            .foregroundStyle(
-                LinearGradient(
-                    colors: [.cyan, .green, .purple, .pink],
-                    startPoint: .leading,
-                    endPoint: .trailing
+        HStack(spacing: 4) {
+            Text("Aurora Screen Shot")
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.cyan, .green, .purple, .pink],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
                 )
-            )
-            .hueRotation(.degrees(hueRotation))
-            .onAppear {
-                withAnimation(.linear(duration: 5.0).repeatForever(autoreverses: true)) {
-                    hueRotation = 360
-                }
+                .hueRotation(.degrees(hueRotation))
+            
+            Text("🇨🇦") // Flag outside gradient to keep colors
+        }
+        .font(.title.bold())
+        .onAppear {
+            withAnimation(.linear(duration: 5.0).repeatForever(autoreverses: true)) {
+                hueRotation = 360
             }
+        }
     }
 }
 
