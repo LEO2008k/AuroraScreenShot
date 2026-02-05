@@ -52,6 +52,8 @@ struct OverlayView: View {
     @State private var aiQuery: String = ""
     @State private var aiResponse: String = ""
     @State private var isAIThinking: Bool = false
+    @State private var aiPanelOffset: CGSize = .zero // For dragging
+    @FocusState private var isInputFocused: Bool // For keyboard focus
     
     var body: some View {
         GeometryReader { geometry in
@@ -108,6 +110,20 @@ struct OverlayView: View {
                 }
                 .clipShape(Rectangle().path(in: selectionRect != .zero ? selectionRect : CGRect(origin: .zero, size: geometry.size)))
                 
+                // INTERACTION LAYER (Gestures for drawing/selection)
+                // We place this BEHIND the UI controls but ABOVE the image/drawings
+                Color.clear
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                handleDrag(value: value, geometry: geometry)
+                            }
+                            .onEnded { _ in
+                                handleDragEnd(geometry: geometry)
+                            }
+                    )
+                
                 // Selection Border & Interface
                 if selectionRect != .zero {
                     if enableAurora { auroraGlow() }
@@ -116,6 +132,7 @@ struct OverlayView: View {
                     timestampPreview()
                     watermarkPreview()
                     if !isQuickOCR {
+                        // Action Bar
                         actionBar(geometry: geometry)
                         
                         if showAIPrompt {
@@ -134,15 +151,7 @@ struct OverlayView: View {
                     NSApp.keyWindow?.makeFirstResponder(nil)
                 }
             }
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        handleDrag(value: value, geometry: geometry)
-                    }
-                    .onEnded { _ in
-                        handleDragEnd(geometry: geometry)
-                    }
-            )
+            // IMPORTANT: Gesture removed from here and moved to 'Gesture Layer' inside ZStack
         }
     }
     
@@ -296,7 +305,10 @@ struct OverlayView: View {
                 }
                 ActionIconBtn(icon: "magnifyingglass", label: "Search", hoverText: "Search in Google", activeTooltip: $activeTooltip, action: { searchImage(geometry: geometry) })
                 ActionIconBtn(icon: "printer", label: "Print", hoverText: "Print Image", activeTooltip: $activeTooltip, action: { printImage(geometry: geometry) })
-                Divider().frame(height: 20)
+                
+                // Settings Divider
+                Rectangle().fill(Color.gray.opacity(0.5)).frame(width: 1, height: 24).padding(.horizontal, 4)
+                
                 ActionIconBtn(icon: "gearshape", label: "Settings", hoverText: "Settings", activeTooltip: $activeTooltip, action: openSettings)
             }
             .padding(8).background(Color(NSColor.windowBackgroundColor).opacity(0.95)).cornerRadius(6).shadow(radius: 4)
@@ -664,7 +676,7 @@ struct OverlayView: View {
         }
     }
     
-    @ViewBuilder func aiPromptPanel(geometry: GeometryProxy) -> some View {
+    func aiPromptPanel(geometry: GeometryProxy) -> some View {
          let rightSpace = geometry.size.width - selectionRect.maxX
          let leftSpace = selectionRect.minX
          let panelX: CGFloat
@@ -674,23 +686,44 @@ struct OverlayView: View {
          
          let panelY = min(max(selectionRect.midY, 150), geometry.size.height - 150)
          
-         VStack(spacing: 8) {
+         
+         return VStack(spacing: 8) {
              // Header
              HStack {
                  Image(systemName: "sparkles").foregroundColor(.yellow)
                  Text("Ask AI").font(.headline).foregroundColor(.white)
                  Spacer()
+                 
+                 // Reset Button
+                 if !aiResponse.isEmpty {
+                     Button(action: { 
+                         aiResponse = ""
+                         aiQuery = ""
+                         isAIThinking = false 
+                         isInputFocused = true
+                     }) {
+                         Image(systemName: "arrow.counterclockwise").foregroundColor(.white.opacity(0.8))
+                     }.buttonStyle(.plain).help("New Chat")
+                     Divider().frame(height: 12).padding(.horizontal, 4)
+                 }
+                 
                  Button(action: { showAIPrompt = false }) {
                      Image(systemName: "xmark.circle.fill").foregroundColor(.secondary)
                  }.buttonStyle(.plain)
              }
+             .padding(.bottom, 4)
+             .contentShape(Rectangle()) // Make header draggable area
+             .gesture(DragGesture().onChanged { v in
+                 aiPanelOffset = CGSize(width: aiPanelOffset.width + v.translation.width, height: aiPanelOffset.height + v.translation.height)
+             })
              
              // Input
              HStack {
-                 TextField("Ask a question about this area...", text: $aiQuery, onCommit: {
+                 TextField("Ask a question...", text: $aiQuery, onCommit: {
                      submitAIQuery(geometry: geometry)
                  })
                  .textFieldStyle(PlainTextFieldStyle())
+                 .focused($isInputFocused)
                  .padding(6)
                  .background(Color.black.opacity(0.3))
                  .cornerRadius(4)
@@ -720,6 +753,7 @@ struct OverlayView: View {
                          .fixedSize(horizontal: false, vertical: true)
                          .multilineTextAlignment(.leading)
                          .padding(4)
+                         .textSelection(.enabled) // Allow text selection
                  }
                  .frame(maxHeight: 200)
                  
@@ -732,7 +766,7 @@ struct OverlayView: View {
                      }.font(.caption).buttonStyle(.plain).foregroundColor(.blue)
                  }
              } else {
-                 Text("Enter a prompt to analyze the selected area.")
+                 Text("AI can analyze this area. Type a prompt above.")
                      .font(.caption)
                      .foregroundColor(.secondary)
                      .frame(height: 50)
@@ -743,7 +777,11 @@ struct OverlayView: View {
          .background(VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)) // Glass effect
          .cornerRadius(12)
          .shadow(radius: 10)
-         .position(x: selectionRect.midX, y: selectionRect.maxY + 140) // Position BELOW selection
+         .position(x: panelX + aiPanelOffset.width, y: panelY + aiPanelOffset.height)
+         .onAppear {
+             isInputFocused = true // Auto-focus when opened
+         }
+    }
     }
     
     // Helper for Blur
