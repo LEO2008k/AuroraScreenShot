@@ -689,7 +689,9 @@ struct OverlayView: View {
     func openSettings() {
         onClose()
         DispatchQueue.main.asyncAfter(deadline: .now()+0.1) {
-            NSApp.sendAction(Selector("openPreferences"), to: nil, from: nil)
+             if let appDelegate = NSApp.delegate as? AppDelegate {
+                appDelegate.openPreferences()
+            }
         }
     }
     

@@ -35,7 +35,10 @@ struct OCRResultView: View {
             // Header
             HStack {
                 Button(action: {
-                    NSApp.sendAction(Selector("openPreferences"), to: nil, from: nil)
+                    // Send action safely
+                    if let appDelegate = NSApp.delegate as? AppDelegate {
+                        appDelegate.openPreferences()
+                    }
                 }) {
                     Image(systemName: "gearshape.fill")
                         .foregroundColor(.secondary)
