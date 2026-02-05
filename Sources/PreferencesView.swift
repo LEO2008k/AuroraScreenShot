@@ -34,7 +34,7 @@ struct PreferencesView: View {
                     Label("Version", systemImage: "info.circle")
                 }
         }
-        .frame(minWidth: 600, maxWidth: .infinity, minHeight: 500, maxHeight: .infinity)
+        .frame(minWidth: 900, maxWidth: .infinity, minHeight: 500, maxHeight: .infinity)
         .padding()
     }
 }
@@ -851,6 +851,9 @@ struct HistorySettingsView: View {
     @State private var retentionHours = SettingsManager.shared.historyRetentionHours
     @ObservedObject var manager = HistoryManager.shared
     
+    // Presets for the picker
+    let presets = [3, 6, 12, 24, 48, 120, -1]
+    
     var body: some View {
         Form {
             Section(header: Text("Translation History")) {
@@ -866,19 +869,53 @@ struct HistorySettingsView: View {
             
             if saveHistory {
                 Section(header: Text("Retention Policy")) {
-                    Picker("Auto-delete history older than:", selection: $retentionHours) {
+                    // Custom Binding for Picker
+                    let pickerBinding = Binding<Int>(
+                        get: {
+                            if presets.contains(retentionHours) { return retentionHours }
+                            return 0 // Custom
+                        },
+                        set: { newValue in
+                            if newValue != 0 {
+                                retentionHours = newValue
+                                SettingsManager.shared.historyRetentionHours = newValue
+                                HistoryManager.shared.cleanOldEntries()
+                            }
+                        }
+                    )
+                    
+                    Picker("Auto-delete history older than:", selection: pickerBinding) {
+                        Text("3 Hours").tag(3)
+                        Text("6 Hours").tag(6)
+                        Text("12 Hours").tag(12)
                         Text("24 Hours").tag(24)
                         Text("48 Hours").tag(48)
-                        Text("1 Week (168h)").tag(168)
+                        Text("5 Days").tag(120)
                         Text("Never").tag(-1)
+                        Divider()
+                        Text("Custom...").tag(0)
                     }
-                    .onChange(of: retentionHours) { newValue in
-                        SettingsManager.shared.historyRetentionHours = newValue
-                        HistoryManager.shared.cleanOldEntries()
+                    
+                    // Show TextField if Custom (value not in presets)
+                    if !presets.contains(retentionHours) {
+                        HStack {
+                            Text("Custom Retention (Hours):")
+                            TextField("Hours", value: $retentionHours, format: .number)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 100)
+                                .onChange(of: retentionHours) { val in
+                                    SettingsManager.shared.historyRetentionHours = val
+                                }
+                            Text("hours")
+                        }
                     }
                     
                     if retentionHours > 0 {
                         Text("History older than \(retentionHours) hours will be automatically deleted.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else if retentionHours == -1 {
+                         Text("History will never be deleted automatically.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
