@@ -489,13 +489,20 @@ struct OverlayView: View {
     
     func selectionHandles() -> some View {
         if selectionRect == .zero { return AnyView(EmptyView()) }
-        return AnyView(ForEach([
-            CGPoint(x: selectionRect.minX, y: selectionRect.minY), CGPoint(x: selectionRect.maxX, y: selectionRect.minY),
-            CGPoint(x: selectionRect.minX, y: selectionRect.maxY), CGPoint(x: selectionRect.maxX, y: selectionRect.maxY),
-            CGPoint(x: selectionRect.midX, y: selectionRect.minY), CGPoint(x: selectionRect.midX, y: selectionRect.maxY),
-            CGPoint(x: selectionRect.minX, y: selectionRect.midY), CGPoint(x: selectionRect.maxX, y: selectionRect.midY)
-        ], id: \.x) { p in
-            Circle().fill(Color.white).frame(width: 8, height: 8).overlay(Circle().stroke(Color.black, lineWidth: 1)).shadow(radius: 2).position(p)
+        let handleSize: CGFloat = 12
+        return AnyView(ForEach(0..<8) { i in
+            let positions = [
+                CGPoint(x: selectionRect.minX, y: selectionRect.minY), CGPoint(x: selectionRect.maxX, y: selectionRect.minY),
+                CGPoint(x: selectionRect.minX, y: selectionRect.maxY), CGPoint(x: selectionRect.maxX, y: selectionRect.maxY),
+                CGPoint(x: selectionRect.midX, y: selectionRect.minY), CGPoint(x: selectionRect.midX, y: selectionRect.maxY),
+                CGPoint(x: selectionRect.minX, y: selectionRect.midY), CGPoint(x: selectionRect.maxX, y: selectionRect.midY)
+            ]
+            Circle()
+                .fill(Color.blue)
+                .frame(width: handleSize, height: handleSize)
+                .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+                .position(positions[i])
         })
     }
     
