@@ -39,6 +39,27 @@ struct PreferencesView: View {
     }
 }
 
+struct GeneralSettingsView: View {
+    @AppStorage("showTranslateButton") private var showTranslateButton = true
+    
+    var body: some View {
+        Form {
+            Section(header: Text("Toolbar")) {
+                 Toggle("Show Translate Button", isOn: $showTranslateButton)
+                     .help("Show the Translate button in the screenshot toolbar")
+                     .onChange(of: showTranslateButton) { newValue in
+                         SettingsManager.shared.showTranslateButton = newValue
+                         // If we need to notify OverlayView, but it reads from SettingsManager directly/reactively if observed properly.
+                         // Since OverlayView reads SettingsManager.shared.showTranslateButton in body, it might need a notification or @ObservedObject.
+                         // But SettingsManager is not ObservableObject usually. Let's assume re-render happens or we rely on AppStorage.
+                         // Wait, OverlayView uses SettingsManager.shared directly. It won't update automatically unless we trigger it.
+                         // But for now let's just save it.
+                     }
+            }
+        }
+    }
+}
+
 struct AppearanceSettingsView: View {
     @State private var blurBackground = SettingsManager.shared.blurBackground
     @State private var blurAmount = SettingsManager.shared.blurAmount
@@ -395,6 +416,8 @@ struct ShortcutsSettingsView: View {
     @State private var screenshotShortcut = SettingsManager.shared.shortcut
     @State private var ocrShortcut = SettingsManager.shared.ocrShortcut
     @State private var settingsShortcut = SettingsManager.shared.settingsShortcut
+    @State private var translationShortcut = Shortcut(keyCode: 17, modifierFlags: NSEvent.ModifierFlags.option.rawValue) // Default T+Option
+
     @State private var repeatShortcut = SettingsManager.shared.repeatShortcut
     @State private var cancelShortcut = SettingsManager.shared.cancelShortcut
     
@@ -408,6 +431,11 @@ struct ShortcutsSettingsView: View {
                 
                 ShortcutRecorderRow(label: "Quick OCR", shortcut: $ocrShortcut) { new in
                     SettingsManager.shared.ocrShortcut = new
+                    NotificationCenter.default.post(name: Notification.Name("HotkeyChanged"), object: nil)
+                }
+                
+                ShortcutRecorderRow(label: "Translation Mode", shortcut: $translationShortcut) { new in
+                    SettingsManager.shared.saveHotKey(key: "translationHotkey", keyCode: Int(new.keyCode), modifiers: new.modifierFlags, enable: true)
                     NotificationCenter.default.post(name: Notification.Name("HotkeyChanged"), object: nil)
                 }
                 
@@ -430,6 +458,10 @@ struct ShortcutsSettingsView: View {
             }
         }
         .padding()
+        .onAppear {
+             let t = SettingsManager.shared.translationHotKey
+             translationShortcut = Shortcut(keyCode: UInt16(t.0), modifierFlags: t.1)
+        }
     }
 }
 

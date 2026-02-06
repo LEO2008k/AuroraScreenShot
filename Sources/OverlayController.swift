@@ -16,7 +16,7 @@ class OverlayController: NSWindowController {
         super.init(coder: coder)
     }
     
-    convenience init(image: CGImage, screen: NSScreen, isQuickOCR: Bool = false) {
+    convenience init(image: CGImage, screen: NSScreen, isQuickOCR: Bool = false, isTranslationMode: Bool = false) {
         let screenRect = screen.frame
         let window = EditingOverlayWindow(
             contentRect: screenRect,
@@ -41,7 +41,7 @@ class OverlayController: NSWindowController {
         let vm = OverlayViewModel()
         self.viewModel = vm
         
-        let view = OverlayView(image: image, isQuickOCR: isQuickOCR, onClose: { [weak self] in
+        let view = OverlayView(image: image, isQuickOCR: isQuickOCR, isTranslationMode: isTranslationMode, onClose: { [weak self] in
             print("onClose called")
             self?.closeOverlay()
         }, viewModel: vm) // Pass ViewModel

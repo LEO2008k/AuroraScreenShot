@@ -91,7 +91,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let ocrShortcut = SettingsManager.shared.ocrShortcut
         let ocrItem = NSMenuItem(title: "Quick OCR", action: #selector(captureOCR), keyEquivalent: KeyboardShortcuts.keyString(for: ocrShortcut.keyCode))
         ocrItem.keyEquivalentModifierMask = ocrShortcut.nsModifierFlags
+        ocrItem.keyEquivalentModifierMask = ocrShortcut.nsModifierFlags
         menu.addItem(ocrItem)
+        
+        // Screenshot & Translate Menu Item
+        let transShortcut = SettingsManager.shared.translationHotKey
+        let transItem = NSMenuItem(title: "Screenshot & Translate", action: #selector(captureTranslation), keyEquivalent: KeyboardShortcuts.keyString(for: UInt16(transShortcut.0)))
+        transItem.keyEquivalentModifierMask = NSEvent.ModifierFlags(rawValue: transShortcut.1)
+        menu.addItem(transItem)
         
         menu.addItem(NSMenuItem.separator())
         // Preferences with dynamic shortcut
@@ -132,6 +139,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let canSc = SettingsManager.shared.cancelShortcut
         HotKeyManager.shared.updateCancelHotKey(keyCode: canSc.keyCode, modifiers: canSc.nsModifierFlags)
         
+        // Translation Hotkey
+        let transSc = SettingsManager.shared.translationHotKey
+        HotKeyManager.shared.updateTranslationHotKey(keyCode: UInt16(transSc.0), modifiers: NSEvent.ModifierFlags(rawValue: transSc.1))
+        
         HotKeyManager.shared.onScreenshotTriggered = { [weak self] in
             DispatchQueue.main.async {
                 self?.captureScreen()
@@ -162,6 +173,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         HotKeyManager.shared.onCancelTriggered = {
             DispatchQueue.main.async {
                 NotificationCenter.default.post(name: Notification.Name("CloseOverlay"), object: nil)
+            }
+            }
+        }
+        
+        HotKeyManager.shared.onTranslationTriggered = { [weak self] in
+            DispatchQueue.main.async {
+                self?.captureTranslation()
             }
         }
         
@@ -210,9 +228,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         print("Quick OCR triggered")
         startCapture(ocrOnly: true)
     }
+    
+    @objc func captureTranslation() {
+        print("Translation Capture triggered")
+        startCapture(ocrOnly: false, isTranslationMode: true)
+    }
 
-    func startCapture(ocrOnly: Bool) {
-        print("Capture screen triggered (OCR Only: \(ocrOnly))")
+    func startCapture(ocrOnly: Bool, isTranslationMode: Bool = false) {
+        print("Capture screen triggered (OCR Only: \(ocrOnly), Translation: \(isTranslationMode))")
         
         // Recursion Guard: Restart behavior
         // If overlay is already active, close it and start a NEW capture (Quick Restart)
@@ -222,7 +245,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             // Wait slightly for cleanup, then recurse
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-                self?.startCapture(ocrOnly: ocrOnly)
+                self?.startCapture(ocrOnly: ocrOnly, isTranslationMode: isTranslationMode)
             }
             return
         }
@@ -247,7 +270,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.statusItem.button?.isHidden = false
             
             // Show overlay with captured image on the correct screen
-            self.overlayController = OverlayController(image: result.image, screen: result.screen, isQuickOCR: ocrOnly)
+            self.overlayController = OverlayController(image: result.image, screen: result.screen, isQuickOCR: ocrOnly, isTranslationMode: isTranslationMode)
             self.overlayController?.showWindow(nil)
             self.overlayController?.window?.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)

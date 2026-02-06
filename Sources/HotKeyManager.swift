@@ -10,7 +10,9 @@ class HotKeyManager {
     var onScreenshotTriggered: (() -> Void)?
     var onOCRTriggered: (() -> Void)?
     var onRepeatTriggered: (() -> Void)?
+    var onRunTriggered: (() -> Void)? // Legacy name? Keeping it or replacing with onCancelTriggered?
     var onCancelTriggered: (() -> Void)?
+    var onTranslationTriggered: (() -> Void)? // New
     
     // Screenshot: Default Cmd+Shift+1
     private var screenshotKey: UInt16 = 18
@@ -23,6 +25,10 @@ class HotKeyManager {
     // Repeat: Default Option+R
     private var repeatKey: UInt16 = 15
     private var repeatMods: NSEvent.ModifierFlags = [.option]
+    
+    // Translation: Default Option+T (Code 17 for 't')
+    private var translationKey: UInt16 = 17
+    private var translationMods: NSEvent.ModifierFlags = [.option]
     
     // Cancel: Default ESC (handled globally/locally)
     private var cancelKey: UInt16 = 53
@@ -81,6 +87,11 @@ class HotKeyManager {
             onRepeatTriggered?()
         }
         
+        // Check Translation
+        if event.keyCode == translationKey && flags.contains(translationMods) && flags.subtracting(translationMods).isEmpty {
+            onTranslationTriggered?()
+        }
+        
         // Check Cancel (Only if mods match, usually empty for ESC)
         if event.keyCode == cancelKey && flags.contains(cancelMods) && flags.subtracting(cancelMods).isEmpty {
             onCancelTriggered?()
@@ -110,6 +121,11 @@ class HotKeyManager {
     func updateCancelHotKey(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {
         self.cancelKey = keyCode
         self.cancelMods = modifiers
+    }
+    
+    func updateTranslationHotKey(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {
+        self.translationKey = keyCode
+        self.translationMods = modifiers
     }
     
     func updateSettingsHotKey(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {

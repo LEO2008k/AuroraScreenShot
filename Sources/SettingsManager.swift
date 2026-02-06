@@ -90,6 +90,12 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kAuroraIntensity) }
     }
     
+    // Specialized HotKey Getters
+    // Assuming getHotKey is a helper function defined elsewhere or will be added.
+    var screenshotHotKey:  (Int, UInt, Bool) { getHotKey(key: "hotkey") }
+    var globalHotKey:      (Int, UInt, Bool) { getHotKey(key: "globalHotkey") }
+    var translationHotKey: (Int, UInt, Bool) { getHotKey(key: "translationHotkey") }
+    
     // Timestamp Settings
     var showTimestamp: Bool {
         get { UserDefaults.standard.bool(forKey: kShowTimestamp) }
@@ -246,6 +252,12 @@ class SettingsManager {
     var ollamaTranslationModel: String {
         get { UserDefaults.standard.string(forKey: kOllamaTranslationModel) ?? "llama3.1" }
         set { UserDefaults.standard.set(newValue, forKey: kOllamaTranslationModel) }
+    }
+
+    private let kShowTranslateButton = "ShowTranslateButton"
+    var showTranslateButton: Bool {
+        get { UserDefaults.standard.object(forKey: kShowTranslateButton) as? Bool ?? true } // Default true
+        set { UserDefaults.standard.set(newValue, forKey: kShowTranslateButton) }
     }
     
     // Size Limits

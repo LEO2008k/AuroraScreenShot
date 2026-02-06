@@ -13,8 +13,18 @@ struct DrawingShape {
 
 struct OverlayView: View {
     let image: CGImage
-    var isQuickOCR: Bool = false
-    var onClose: () -> Void
+    let isQuickOCR: Bool
+    let isTranslationMode: Bool // New
+    let onClose: () -> Void
+    
+    // Default Init
+    init(image: CGImage, isQuickOCR: Bool = false, isTranslationMode: Bool = false, onClose: @escaping () -> Void, viewModel: OverlayViewModel) {
+        self.image = image
+        self.isQuickOCR = isQuickOCR
+        self.isTranslationMode = isTranslationMode
+        self.onClose = onClose
+        self.viewModel = viewModel
+    }
     
     @ObservedObject var viewModel: OverlayViewModel
     
@@ -206,7 +216,9 @@ struct OverlayView: View {
         if viewModel.toolMode == .selection {
             startPoint = nil
             currentResizeHandle = .none
+
             if isQuickOCR && selectionRect != .zero { performOCR(geometry: geometry) }
+            else if isTranslationMode && selectionRect != .zero { performTranslation(geometry: geometry) } // New logic
         } else {
             if let shape = currentDrawing { viewModel.drawings.append(shape) }
             currentDrawing = nil
@@ -294,6 +306,10 @@ struct OverlayView: View {
                 if showTimestampButton { ActionIconBtn(icon: "clock", label: "Timestamp", isActive: isTimestampApplied, hoverText: "Toggle", activeTooltip: $activeTooltip) { isTimestampApplied.toggle() } }
                 if showWatermarkButton { ActionIconBtn(icon: "crown", label: "Watermark", isActive: isWatermarkApplied, hoverText: "Toggle", activeTooltip: $activeTooltip) { isWatermarkApplied.toggle() } }
                 if showTimestampButton || showWatermarkButton { Divider().frame(height: 20) }
+                
+                if SettingsManager.shared.showTranslateButton {
+                     ActionIconBtn(icon: "globe", label: "Translate", hoverText: "OCR & Translate", activeTooltip: $activeTooltip, action: { performTranslation(geometry: geometry) })
+                }
                 
                 ActionIconBtn(icon: "text.viewfinder", label: "OCR", hoverText: "Recognize Text", activeTooltip: $activeTooltip, action: { performOCR(geometry: geometry) })
                 if SettingsManager.shared.enableOllama {
@@ -643,6 +659,36 @@ struct OverlayView: View {
         NSApp.activate(ignoringOtherApps: true)
         
         onClose()
+    }
+    
+    func performTranslation(geometry: GeometryProxy) {
+        guard let cropped = getCroppedImage(geometry: geometry) else { return }
+        
+        // 1. OCR (Fast)
+        let ocrText = AIHelper.shared.recognizeText(from: cropped)
+        if ocrText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return }
+        
+        onClose()
+        
+        // 2. Open Result Window with Placeholder
+        if let windowController = (NSApp.delegate as? AppDelegate)?.resultWindowController { windowController.close() }
+        
+        let resultVC = OCRResultWindowController(text: "Translating...\n\n(Original: \(ocrText.prefix(50))...)")
+        (NSApp.delegate as? AppDelegate)?.resultWindowController = resultVC
+        resultVC.showWindow(nil)
+        resultVC.window?.center()
+        
+        // 3. Perform Translation
+        AIHelper.shared.translateText(ocrText, to: SettingsManager.shared.targetLanguage) { result in
+             DispatchQueue.main.async {
+                 switch result {
+                 case .success(let translated):
+                     resultVC.updateText(translated)
+                 case .failure(let error):
+                     resultVC.updateText("Error: \(error.localizedDescription)\n\nOriginal Text:\n\(ocrText)")
+                 }
+             }
+        }
     }
     
     func updateSelection(to point: CGPoint) {
