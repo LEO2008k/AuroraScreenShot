@@ -655,8 +655,8 @@ struct OverlayView: View {
         
         if let windowController = (NSApp.delegate as? AppDelegate)?.resultWindowController { windowController.close() }
         
-        // FIXED INIT: No image arg
-        let resultVC = OCRResultWindowController(text: ocrText)
+        // Quick OCR: manual translation (autoTranslate: false)
+        let resultVC = OCRResultWindowController(text: ocrText, autoTranslate: false)
         (NSApp.delegate as? AppDelegate)?.resultWindowController = resultVC
         resultVC.showWindow(nil)
         resultVC.window?.center()

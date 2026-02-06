@@ -4,6 +4,7 @@ import Cocoa
 
 struct OCRResultView: View {
     @State var text: String
+    var autoTranslate: Bool = true // Auto-translate for Translation Mode, manual for Quick OCR
     var onClose: () -> Void
     
     @State private var translatedText: String = ""
@@ -225,8 +226,8 @@ struct OCRResultView: View {
                 // We don't change 'sourceLanguage' to detected, we keep it 'Auto'
             }
             
-            // Auto-translate if it's not the placeholder text
-            if !text.isEmpty && !text.starts(with: "Translating...") && translatedText.isEmpty {
+            // Auto-translate if enabled and it's not the placeholder text
+            if autoTranslate && !text.isEmpty && !text.starts(with: "Translating...") && translatedText.isEmpty {
                  translateText()
             }
         }
@@ -317,8 +318,9 @@ struct OCRResultView: View {
 }
 
 class OCRResultWindowController: NSWindowController {
+    private var storedAutoTranslate: Bool = true // Store for updateText
     
-    convenience init(text: String) {
+    convenience init(text: String, autoTranslate: Bool = true) {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 600, height: 500),
             styleMask: [.titled, .closable, .resizable, .miniaturizable],
@@ -331,15 +333,17 @@ class OCRResultWindowController: NSWindowController {
         window.level = .normal
         
         self.init(window: window)
+        self.storedAutoTranslate = autoTranslate
         
-        let view = OCRResultView(text: text) { [weak self] in
+        let view = OCRResultView(text: text, autoTranslate: autoTranslate) { [weak self] in
             self?.close()
         }
         
         window.contentView = NSHostingView(rootView: view)
     }
+    
     func updateText(_ newText: String) {
-        let view = OCRResultView(text: newText) { [weak self] in
+        let view = OCRResultView(text: newText, autoTranslate: storedAutoTranslate) { [weak self] in
             self?.close()
         }
         self.window?.contentView = NSHostingView(rootView: view)
