@@ -222,10 +222,12 @@ struct OCRResultView: View {
             // Auto-detect language just for UI
             let detected = AIHelper.shared.detectLanguage(text: text)
             if detected != "Undetermined" {
-                // We don't change 'sourceLanguage' to detected, we keep it 'Auto',
-                // but we could show it in UI if we wanted.
-                // Or we can set it:
-                // sourceLanguage = detected
+                // We don't change 'sourceLanguage' to detected, we keep it 'Auto'
+            }
+            
+            // Auto-translate if it's not the placeholder text
+            if !text.isEmpty && !text.starts(with: "Translating...") && translatedText.isEmpty {
+                 translateText()
             }
         }
     }

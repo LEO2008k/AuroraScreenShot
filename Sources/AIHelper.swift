@@ -232,7 +232,18 @@ struct AIHelper {
         }
         
         let sourceLang = source == "Auto" ? "the detected language" : source
-        let prompt = "Translate the following text from \(sourceLang) to \(target). Output ONLY the translated text, do not add any explanations or notes. \n\nText: \(text)"
+        let prompt = """
+        You are a professional translator. Translate the following text from \(sourceLang) to \(target).
+        
+        IMPORTANT RULES:
+        1. Output ONLY the translated text.
+        2. Do NOT include any explanations, notes, or introductions (like "Here is the translation").
+        3. Do NOT add conversational filler.
+        4. If the text is already partly in the target language, keep it natural.
+        
+        Text to translate:
+        \(text)
+        """
         
         let body = OllamaRequest(
             model: model,
