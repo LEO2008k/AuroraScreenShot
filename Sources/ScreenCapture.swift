@@ -49,12 +49,24 @@ struct ScreenCapture {
             CGRequestScreenCaptureAccess()
         }
         
+        // Respect downscale setting to reduce memory usage
+        // For 5K displays, .bestResolution can use 2GB+ RAM
+        // .nominalResolution captures at 1x instead of 2x Retina
+        let imageOptions: CGWindowImageOption
+        if SettingsManager.shared.downscaleRetina {
+            imageOptions = [.nominalResolution]
+            print("Using nominal resolution (1x) to reduce memory")
+        } else {
+            imageOptions = [.bestResolution]
+            print("Using best resolution (2x Retina)")
+        }
+        
         // Use CGWindowListCreateImage to capture ALL windows on screen
         if let image = CGWindowListCreateImage(
             captureRect,
             .optionOnScreenOnly,
             kCGNullWindowID,
-            [.bestResolution]
+            imageOptions
         ) {
             print("Captured image size: \(image.width)x\(image.height)")
             return (image, screen)
