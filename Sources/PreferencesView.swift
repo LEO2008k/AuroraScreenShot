@@ -69,6 +69,10 @@ struct AppearanceSettingsView: View {
                             }
                         Text("\(Int(blurAmount))%")
                     }
+                    
+                    Text("⚠️ Blur may increase memory usage during capture")
+                        .font(.caption)
+                        .foregroundColor(.orange)
                 }
             }
             

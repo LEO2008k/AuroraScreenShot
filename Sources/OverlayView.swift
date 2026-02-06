@@ -68,46 +68,38 @@ struct OverlayView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Background Layer (Blurred/Clean)
-                Group {
-                    if blurBackground {
-                        Image(decorative: image, scale: 1.0)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .blur(radius: blurAmount)
-                            .frame(width: geometry.size.width, height: geometry.size.height)
-                            .position(x: geometry.size.width/2, y: geometry.size.height/2)
-                    } else {
-                        Image(decorative: image, scale: 1.0)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: geometry.size.width, height: geometry.size.height)
-                            .position(x: geometry.size.width/2, y: geometry.size.height/2)
-                    }
-                }
-                
-                // Dimming
-                if !blurBackground {
-                    Path { path in
-                        path.addRect(CGRect(origin: .zero, size: geometry.size))
-                        if selectionRect != .zero {
-                            path.addRect(selectionRect)
-                        }
-                    }
-                    .fill(Color.black.opacity(0.15), style: FillStyle(eoFill: true))
-                    .ignoresSafeArea()
-                    .allowsHitTesting(false)
-                }
-                
-                // Active Zone
-                if blurBackground && selectionRect != .zero {
+                // Optimized Background Layer with Blur
+                ZStack {
+                    // Base image with conditional blur
                     Image(decorative: image, scale: 1.0)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: geometry.size.width, height: geometry.size.height)
-                        .position(x: geometry.size.width/2, y: geometry.size.height/2)
-                        .clipShape(Rectangle().path(in: selectionRect))
+                        .blur(radius: blurBackground ? min(blurAmount, 15) : 0)
+                    
+                    // Dimming overlay (only when NOT blurring)
+                    if !blurBackground {
+                        Path { path in
+                            path.addRect(CGRect(origin: .zero, size: geometry.size))
+                            if selectionRect != .zero {
+                                path.addRect(selectionRect)
+                            }
+                        }
+                        .fill(Color.black.opacity(0.15), style: FillStyle(eoFill: true))
+                        .allowsHitTesting(false)
+                    }
+                    
+                    // Clear selection area (only when blurring)
+                    if blurBackground && selectionRect != .zero {
+                        Image(decorative: image, scale: 1.0)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .clipShape(Rectangle().path(in: selectionRect))
+                    }
                 }
+                .drawingGroup() // Composite into single layer for performance
+                .position(x: geometry.size.width/2, y: geometry.size.height/2)
                 
                 // Drawings
                 ZStack {
@@ -141,8 +133,8 @@ struct OverlayView: View {
                     selectionHandles()
                     timestampPreview()
                     watermarkPreview()
-                    if !isQuickOCR {
-                        // Action Bar
+                    if !isQuickOCR && !isTranslationMode {
+                        // Action Bar and Tools (only for regular mode)
                         actionBar(geometry: geometry)
                         
                         if showAIPrompt {
@@ -150,6 +142,9 @@ struct OverlayView: View {
                         } else {
                             toolsBar(geometry: geometry)
                         }
+                    } else if !isQuickOCR && isTranslationMode {
+                        // Translation mode: show action bar only
+                        actionBar(geometry: geometry)
                     }
                 }
             }
@@ -508,86 +503,90 @@ struct OverlayView: View {
     
     // Flatten logic
     func getFlattenedImage(geometry: GeometryProxy) -> CGImage? {
-        let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
-        let visualImage = NSImage(size: nsImage.size, flipped: false) { rect in
-            nsImage.draw(in: rect)
-            let scaleX = CGFloat(image.width) / geometry.size.width
-            let scaleY = CGFloat(image.height) / geometry.size.height
-            let ctx = NSGraphicsContext.current?.cgContext
-            
-            // Re-implement drawing loop for context (simplified)
-            for shape in viewModel.drawings {
-                ctx?.setFillColor(NSColor(shape.color).cgColor)
-                ctx?.setStrokeColor(NSColor(shape.color).cgColor)
-                ctx?.setLineCap(.round)
-                ctx?.setLineJoin(.round)
+        return autoreleasepool {
+            let nsImage = NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+            let visualImage = NSImage(size: nsImage.size, flipped: false) { rect in
+                nsImage.draw(in: rect)
+                let scaleX = CGFloat(image.width) / geometry.size.width
+                let scaleY = CGFloat(image.height) / geometry.size.height
+                let ctx = NSGraphicsContext.current?.cgContext
                 
-                if shape.type == .freestyle {
-                    ctx?.setLineWidth(shape.lineWidth * scaleX)
-                    ctx?.beginPath(); var f=true
-                    for p in shape.points {
-                        let x = p.x * scaleX; let y = CGFloat(image.height) - (p.y * scaleY)
-                        if f { ctx?.move(to: CGPoint(x:x,y:y)); f=false } else { ctx?.addLine(to: CGPoint(x:x,y:y)) }
+                // Re-implement drawing loop for context (simplified)
+                for shape in viewModel.drawings {
+                    ctx?.setFillColor(NSColor(shape.color).cgColor)
+                    ctx?.setStrokeColor(NSColor(shape.color).cgColor)
+                    ctx?.setLineCap(.round)
+                    ctx?.setLineJoin(.round)
+                    
+                    if shape.type == .freestyle {
+                        ctx?.setLineWidth(shape.lineWidth * scaleX)
+                        ctx?.beginPath(); var f=true
+                        for p in shape.points {
+                            let x = p.x * scaleX; let y = CGFloat(image.height) - (p.y * scaleY)
+                            if f { ctx?.move(to: CGPoint(x:x,y:y)); f=false } else { ctx?.addLine(to: CGPoint(x:x,y:y)) }
+                        }
+                        ctx?.strokePath()
+                    } else if shape.type == .line || shape.type == .arrow {
+                        ctx?.setLineWidth(shape.lineWidth * scaleX)
+                        let sX = shape.start.x*scaleX; let sY = CGFloat(image.height)-(shape.start.y*scaleY)
+                        let eX = shape.end.x*scaleX; let eY = CGFloat(image.height)-(shape.end.y*scaleY)
+                        ctx?.beginPath(); ctx?.move(to: CGPoint(x:sX,y:sY)); ctx?.addLine(to: CGPoint(x:eX,y:eY)); ctx?.strokePath()
+                        if shape.type == .arrow {
+                            // arrow head fill
+                            let angle = atan2(eY-sY, eX-sX)
+                            let len = max(shape.lineWidth*3.5*scaleX, 20*scaleX)
+                            ctx?.beginPath(); ctx?.move(to: CGPoint(x:eX,y:eY))
+                            ctx?.addLine(to: CGPoint(x: eX - len*cos(angle - .pi/6), y: eY - len*sin(angle - .pi/6)))
+                            ctx?.addLine(to: CGPoint(x: eX - len*cos(angle + .pi/6), y: eY - len*sin(angle + .pi/6)))
+                            ctx?.closePath(); ctx?.fillPath()
+                        }
+                    } else if shape.type == .rect {
+                        let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
+                        ctx?.fill(CGRect(x: r.minX*scaleX, y: CGFloat(image.height)-(r.maxY*scaleY), width: r.width*scaleX, height: r.height*scaleY))
+                    } else if shape.type == .strokeRect {
+                        let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
+                         ctx?.setLineWidth(shape.lineWidth * scaleX)
+                         ctx?.stroke(CGRect(x: r.minX*scaleX, y: CGFloat(image.height)-(r.maxY*scaleY), width: r.width*scaleX, height: r.height*scaleY))
                     }
-                    ctx?.strokePath()
-                } else if shape.type == .line || shape.type == .arrow {
-                    ctx?.setLineWidth(shape.lineWidth * scaleX)
-                    let sX = shape.start.x*scaleX; let sY = CGFloat(image.height)-(shape.start.y*scaleY)
-                    let eX = shape.end.x*scaleX; let eY = CGFloat(image.height)-(shape.end.y*scaleY)
-                    ctx?.beginPath(); ctx?.move(to: CGPoint(x:sX,y:sY)); ctx?.addLine(to: CGPoint(x:eX,y:eY)); ctx?.strokePath()
-                    if shape.type == .arrow {
-                        // arrow head fill
-                        let angle = atan2(eY-sY, eX-sX)
-                        let len = max(shape.lineWidth*3.5*scaleX, 20*scaleX)
-                        ctx?.beginPath(); ctx?.move(to: CGPoint(x:eX,y:eY))
-                        ctx?.addLine(to: CGPoint(x: eX - len*cos(angle - .pi/6), y: eY - len*sin(angle - .pi/6)))
-                        ctx?.addLine(to: CGPoint(x: eX - len*cos(angle + .pi/6), y: eY - len*sin(angle + .pi/6)))
-                        ctx?.closePath(); ctx?.fillPath()
+                }
+                
+                // Timestamps & Watermarks inside context ...
+                if isTimestampApplied {
+                    let d = getFormattedDate()
+                    let attr: [NSAttributedString.Key:Any] = [.font: NSFont.systemFont(ofSize: 14*scaleX, weight: .medium), .foregroundColor: NSColor(viewModel.selectedColor)]
+                    let str = NSAttributedString(string: d, attributes: attr)
+                    let m: CGFloat = 10*scaleX
+                    let dX = (selectionRect.maxX*scaleX) - str.size().width - m
+                    let dY = CGFloat(image.height) - (selectionRect.maxY*scaleY) + m
+                    str.draw(at: CGPoint(x:dX, y:dY))
+                }
+                if isWatermarkApplied {
+                    let t = SettingsManager.shared.watermarkText
+                    if !t.isEmpty {
+                       let s = CGFloat(SettingsManager.shared.watermarkSize)
+                       let attr: [NSAttributedString.Key:Any] = [.font: NSFont.systemFont(ofSize: s*scaleX, weight: .bold), .foregroundColor: NSColor(viewModel.selectedColor).withAlphaComponent(0.3)]
+                       let str = NSAttributedString(string: t, attributes: attr)
+                       let cX = selectionRect.midX*scaleX; let cY = selectionRect.midY*scaleY
+                       let dX = cX - str.size().width/2
+                       let dY = CGFloat(image.height) - (cY*scaleY) - str.size().height/2
+                       str.draw(at: CGPoint(x:dX, y:dY))
                     }
-                } else if shape.type == .rect {
-                    let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
-                    ctx?.fill(CGRect(x: r.minX*scaleX, y: CGFloat(image.height)-(r.maxY*scaleY), width: r.width*scaleX, height: r.height*scaleY))
-                } else if shape.type == .strokeRect {
-                    let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
-                     ctx?.setLineWidth(shape.lineWidth * scaleX)
-                     ctx?.stroke(CGRect(x: r.minX*scaleX, y: CGFloat(image.height)-(r.maxY*scaleY), width: r.width*scaleX, height: r.height*scaleY))
                 }
+                
+                return true
             }
-            
-            // Timestamps & Watermarks inside context ...
-            if isTimestampApplied {
-                let d = getFormattedDate()
-                let attr: [NSAttributedString.Key:Any] = [.font: NSFont.systemFont(ofSize: 14*scaleX, weight: .medium), .foregroundColor: NSColor(viewModel.selectedColor)]
-                let str = NSAttributedString(string: d, attributes: attr)
-                let m: CGFloat = 10*scaleX
-                let dX = (selectionRect.maxX*scaleX) - str.size().width - m
-                let dY = CGFloat(image.height) - (selectionRect.maxY*scaleY) + m
-                str.draw(at: CGPoint(x:dX, y:dY))
-            }
-            if isWatermarkApplied {
-                let t = SettingsManager.shared.watermarkText
-                if !t.isEmpty {
-                   let s = CGFloat(SettingsManager.shared.watermarkSize)
-                   let attr: [NSAttributedString.Key:Any] = [.font: NSFont.systemFont(ofSize: s*scaleX, weight: .bold), .foregroundColor: NSColor(viewModel.selectedColor).withAlphaComponent(0.3)]
-                   let str = NSAttributedString(string: t, attributes: attr)
-                   let cX = selectionRect.midX*scaleX; let cY = selectionRect.midY*scaleY
-                   let dX = cX - str.size().width/2
-                   let dY = CGFloat(image.height) - (cY*scaleY) - str.size().height/2
-                   str.draw(at: CGPoint(x:dX, y:dY))
-                }
-            }
-            
-            return true
+            return visualImage.cgImage(forProposedRect: nil, context: nil, hints: nil)
         }
-        return visualImage.cgImage(forProposedRect: nil, context: nil, hints: nil)
     }
 
     func getCroppedImage(geometry: GeometryProxy) -> CGImage? {
-        guard let flat = getFlattenedImage(geometry: geometry) else { return nil }
-        let sX = CGFloat(flat.width) / geometry.size.width
-        let sY = CGFloat(flat.height) / geometry.size.height
-        let rect = CGRect(x: selectionRect.minX*sX, y: selectionRect.minY*sY, width: selectionRect.width*sX, height: selectionRect.height*sY)
-        return flat.cropping(to: rect)
+        return autoreleasepool {
+            guard let flat = getFlattenedImage(geometry: geometry) else { return nil }
+            let sX = CGFloat(flat.width) / geometry.size.width
+            let sY = CGFloat(flat.height) / geometry.size.height
+            let rect = CGRect(x: selectionRect.minX*sX, y: selectionRect.minY*sY, width: selectionRect.width*sX, height: selectionRect.height*sY)
+            return flat.cropping(to: rect)
+        }
     }
     
     // MARK: - Clipboard & Save Logic (Optimized)
