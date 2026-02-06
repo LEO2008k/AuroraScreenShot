@@ -353,7 +353,7 @@ struct AISettingsView: View {
 struct GeneralSettingsView: View {
     @State private var path: String = SettingsManager.shared.saveDirectory.path
     @State private var launchAtLogin = SettingsManager.shared.launchAtLogin
-    @State private var downscaleRetina = SettingsManager.shared.downscaleRetina
+    @State private var captureQuality = SettingsManager.shared.captureQuality
     @AppStorage("showTranslateButton") private var showTranslateButton = true // Merged
     
     var body: some View {
@@ -368,41 +368,133 @@ struct GeneralSettingsView: View {
             
             Section(header: Text("Save Location")) {
                 HStack {
-                    Text(path)
-                        .truncationMode(.middle)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    
-                    Button("Change...") {
-                        SettingsManager.shared.promptForSaveDirectory()
-                        path = SettingsManager.shared.saveDirectory.path
+                    Text("Folder:")
+                    TextField("", text: $path)
+                        .disabled(true)
+                    Button("Choose...") {
+                        let panel = NSOpenPanel()
+                        panel.canChooseDirectories = true
+                        panel.canChooseFiles = false
+                        panel.allowsMultipleSelection = false
+                        if panel.runModal() == .OK, let url = panel.url {
+                            path = url.path
+                            SettingsManager.shared.saveDirectory = url
+                        }
                     }
                 }
             }
             
-            Section(header: Text("System")) {
+            Section(header: Text("Startup")) {
                 Toggle("Launch at Login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { newValue in
                         SettingsManager.shared.launchAtLogin = newValue
                     }
             }
             
-            Section(header: Text("Capture")) {
-                Toggle("Downscale Retina screens (2x -> 1x)", isOn: $downscaleRetina)
-                    .onChange(of: downscaleRetina) { newValue in
-                        SettingsManager.shared.downscaleRetina = newValue
+            Section(header: Text("Capture Quality")) {
+                let totalRAM = SettingsManager.getTotalRAMGB()
+                let canUseMax = SettingsManager.canUseMaximumQuality()
+                
+                Picker("Screenshot Quality:", selection: $captureQuality) {
+                    ForEach(CaptureQuality.allCases, id: \.self) { quality in
+                        Text(quality.displayName)
+                            .tag(quality.rawValue)
                     }
-                Text("Reduces image dimensions by 50% to save space.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                }
+                .pickerStyle(.radioGroup)
+                .onChange(of: captureQuality) { newValue in
+                    if let quality = CaptureQuality(rawValue: newValue) {
+                        // Check if trying to enable maximum without enough RAM
+                        if quality == .maximum && !canUseMax {
+                            // Revert to medium
+                            captureQuality = CaptureQuality.medium.rawValue
+                            showLowRAMAlert()
+                        } else {
+                            SettingsManager.shared.quality = quality
+                        }
+                    }
+                }
+                .disabled(!canUseMax && SettingsManager.shared.quality == .maximum)
+                
+                // RAM indicator
+                HStack {
+                    Image(systemName: "memorychip")
+                        .foregroundColor(.secondary)
+                    Text("System RAM: \(totalRAM) GB")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                // Quality description based on selection
+                if let currentQuality = CaptureQuality(rawValue: captureQuality) {
+                    switch currentQuality {
+                    case .maximum:
+                        HStack(alignment: .top, spacing: 4) {
+                            Text("⚠️")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("High memory usage: \(currentQuality.memoryEstimate)")
+                                    .font(.caption)
+                                    .foregroundColor(.orange)
+                                Text("Best for professional work")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    case .medium:
+                        HStack(alignment: .top, spacing: 4) {
+                            Text("✅")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Recommended - Balanced quality & memory")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
+                                Text("Memory usage: \(currentQuality.memoryEstimate)")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    case .minimum:
+                        HStack(alignment: .top, spacing: 4) {
+                            Text("💾")
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Low memory mode")
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                                Text("Memory usage: \(currentQuality.memoryEstimate)")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                }
+                
+                // Low RAM warning
+                if !canUseMax {
+                    HStack(alignment: .top, spacing: 4) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.red)
+                            .font(.caption)
+                        Text("Maximum quality requires 12GB+ RAM (you have \(totalRAM)GB)")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+                }
             }
         }
         .padding()
         .onAppear {
             path = SettingsManager.shared.saveDirectory.path
             launchAtLogin = SettingsManager.shared.launchAtLogin
-            downscaleRetina = SettingsManager.shared.downscaleRetina
+            captureQuality = SettingsManager.shared.captureQuality
         }
+    }
+    
+    private func showLowRAMAlert() {
+        let alert = NSAlert()
+        alert.messageText = "Insufficient RAM"
+        alert.informativeText = "Maximum quality requires at least 12GB of RAM. Your system has \(SettingsManager.getTotalRAMGB())GB.\n\nPlease select Medium or Minimum quality instead."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 }
 

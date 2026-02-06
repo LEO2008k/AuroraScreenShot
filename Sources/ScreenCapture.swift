@@ -49,30 +49,64 @@ struct ScreenCapture {
             CGRequestScreenCaptureAccess()
         }
         
-        // Respect downscale setting to reduce memory usage
-        // For 5K displays, .bestResolution can use 2GB+ RAM
-        // .nominalResolution captures at 1x instead of 2x Retina
+        // Determine quality settings - support three levels
+        let quality = SettingsManager.shared.quality
         let imageOptions: CGWindowImageOption
-        if SettingsManager.shared.downscaleRetina {
-            imageOptions = [.nominalResolution]
-            print("Using nominal resolution (1x) to reduce memory")
-        } else {
+        
+        switch quality {
+        case .maximum:
             imageOptions = [.bestResolution]
-            print("Using best resolution (2x Retina)")
+            print("Using maximum quality (2x Retina) - High memory usage")
+        case .medium:
+            imageOptions = [.nominalResolution]
+            print("Using medium quality (1x nominal) - Balanced")
+        case .minimum:
+            imageOptions = [.nominalResolution]
+            print("Using minimum quality (1x + downscale) - Low memory")
         }
         
-        // Use CGWindowListCreateImage to capture ALL windows on screen
-        if let image = CGWindowListCreateImage(
+        // Capture screen
+        guard let rawImage = CGWindowListCreateImage(
             captureRect,
             .optionOnScreenOnly,
             kCGNullWindowID,
             imageOptions
-        ) {
-            print("Captured image size: \(image.width)x\(image.height)")
-            return (image, screen)
+        ) else {
+            print("Error: CGWindowListCreateImage failed")
+            return nil
         }
         
-        print("Error: CGWindowListCreateImage failed")
-        return nil
+        print("Captured raw image size: \(rawImage.width)x\(rawImage.height)")
+        
+        // Apply additional downscale for minimum quality
+        if quality == .minimum {
+            let downscaleFactor: CGFloat = 0.5
+            let newWidth = Int(CGFloat(rawImage.width) * downscaleFactor)
+            let newHeight = Int(CGFloat(rawImage.height) * downscaleFactor)
+            
+            print("Downscaling to: \(newWidth)x\(newHeight)")
+            
+            if let ctx = CGContext(
+                data: nil,
+                width: newWidth,
+                height: newHeight,
+                bitsPerComponent: rawImage.bitsPerComponent,
+                bytesPerRow: 0,
+                space: rawImage.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: rawImage.bitmapInfo.rawValue
+            ) {
+                ctx.interpolationQuality = .medium
+                ctx.draw(rawImage, in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+                if let downscaled = ctx.makeImage() {
+                    print("Final downscaled image size: \(downscaled.width)x\(downscaled.height)")
+                    return (downscaled, screen)
+                }
+            }
+            
+            print("Warning: Downscaling failed, using nominal resolution")
+        }
+        
+        print("Final image size: \(rawImage.width)x\(rawImage.height)")
+        return (rawImage, screen)
     }
 }

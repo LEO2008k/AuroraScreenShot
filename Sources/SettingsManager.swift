@@ -1,6 +1,28 @@
-// This program was developed by Levko Kravchuk with the help of Vibe Coding
 import Foundation
 import Cocoa
+
+// Capture quality levels
+enum CaptureQuality: String, Codable, CaseIterable {
+    case maximum = "maximum"   // 2x Retina, high memory
+    case medium = "medium"     // 1x nominal, recommended
+    case minimum = "minimum"   // Downscaled, low memory
+    
+    var displayName: String {
+        switch self {
+        case .maximum: return "Maximum (2x Retina)"
+        case .medium: return "Medium (1x)"
+        case .minimum: return "Minimum (Downscaled)"
+        }
+    }
+    
+    var memoryEstimate: String {
+        switch self {
+        case .maximum: return "~2GB for full screen"
+        case .medium: return "~500MB"
+        case .minimum: return "~200MB"
+        }
+    }
+}
 
 class SettingsManager {
     static let shared = SettingsManager()
@@ -332,12 +354,51 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kDefaultTargetLanguage) }
     }
     
-    // Downscale Retina
-    private let kDownscaleRetina = "DownscaleRetina"
-    var downscaleRetina: Bool {
-        get { UserDefaults.standard.bool(forKey: kDownscaleRetina) }
-        set { UserDefaults.standard.set(newValue, forKey: kDownscaleRetina) }
+    
+    // Capture Quality (replaces old downscaleRetina)
+    private let kCaptureQuality = "CaptureQuality"
+    var captureQuality: String {
+        get { 
+            // Migration: if new setting doesn't exist but old one does
+            if UserDefaults.standard.object(forKey: kCaptureQuality) == nil {
+                let oldDownscale = UserDefaults.standard.bool(forKey: "DownscaleRetina")
+                return oldDownscale ? CaptureQuality.medium.rawValue : CaptureQuality.maximum.rawValue
+            }
+            return UserDefaults.standard.string(forKey: kCaptureQuality) ?? CaptureQuality.medium.rawValue
+        }
+        set { UserDefaults.standard.set(newValue, forKey: kCaptureQuality) }
     }
+    
+    var quality: CaptureQuality {
+        get { CaptureQuality(rawValue: captureQuality) ?? .medium }
+        set { captureQuality = newValue.rawValue }
+    }
+    
+    // Backward compatibility: map quality to old downscaleRetina for existing code
+    var downscaleRetina: Bool {
+        get { quality != .maximum }
+        set { quality = newValue ? .medium : .maximum }
+    }
+    
+    // Warning suppression for maximum quality
+    private let kSuppressMaxQualityWarning = "SuppressMaxQualityWarning"
+    var suppressMaxQualityWarning: Bool {
+        get { UserDefaults.standard.bool(forKey: kSuppressMaxQualityWarning) }
+        set { UserDefaults.standard.set(newValue, forKey: kSuppressMaxQualityWarning) }
+    }
+    
+    // RAM Detection
+    static func getTotalRAMGB() -> Int {
+        var size: UInt64 = 0
+        var len = MemoryLayout.size(ofValue: size)
+        sysctlbyname("hw.memsize", &size, &len, nil, 0)
+        return Int(size / (1024 * 1024 * 1024))
+    }
+    
+    static func canUseMaximumQuality() -> Bool {
+        return getTotalRAMGB() >= 12
+    }
+
     
     // Auto Restart
     private let kAutoRestartAfterUpdate = "AutoRestartAfterUpdate"

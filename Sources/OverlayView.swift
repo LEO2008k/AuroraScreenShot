@@ -593,6 +593,17 @@ struct OverlayView: View {
     
     // MARK: - Clipboard & Save Logic (Optimized)
     func copyImage(geometry: GeometryProxy) {
+        // Check for high memory usage warning
+        if SettingsManager.shared.quality == .maximum && !SettingsManager.shared.suppressMaxQualityWarning {
+            showMaxQualityWarning {
+                self.performCopyInternal(geometry: geometry)
+            }
+        } else {
+            performCopyInternal(geometry: geometry)
+        }
+    }
+    
+    private func performCopyInternal(geometry: GeometryProxy) {
         autoreleasepool {
             guard let cropped = getCroppedImage(geometry: geometry) else { return }
             
@@ -604,6 +615,27 @@ struct OverlayView: View {
             pasteboard.setData(pngData, forType: .png)
         }
         onClose()
+    }
+    
+    private func showMaxQualityWarning(onConfirm: @escaping () -> Void) {
+        let alert = NSAlert()
+        alert.messageText = "High Memory Usage Warning"
+        alert.informativeText = "You're copying a screenshot in Maximum Quality mode. This may use up to 2GB of memory on Retina displays.\n\nContinue?"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Copy Anyway")
+        alert.addButton(withTitle: "Cancel")
+        alert.showsSuppressionButton = true
+        alert.suppressionButton?.title = "Don't show this again"
+        
+        let response = alert.runModal()
+        
+        if alert.suppressionButton?.state == .on {
+            SettingsManager.shared.suppressMaxQualityWarning = true
+        }
+        
+        if response == .alertFirstButtonReturn {
+            onConfirm()
+        }
     }
     
     func saveImage(geometry: GeometryProxy) {
