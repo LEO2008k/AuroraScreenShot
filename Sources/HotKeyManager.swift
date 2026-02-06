@@ -45,16 +45,14 @@ class HotKeyManager {
         
         // Global
         monitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            self?.handleEvent(event)
+            _ = self?.handleEvent(event)
         }
         
-        // Local
+        // Local - consume event if handled to prevent character leaks (e.g., "!" in text fields)
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            self?.handleEvent(event)
-            // We return the event, unless we want to consume it? 
-            // For Cancel (ESC), we might want to let it bubble if not used?
-            // But usually we just monitor.
-            return event
+            guard let self = self else { return event }
+            let handled = self.handleEvent(event)
+            return handled ? nil : event  // Consume if hotkey matched
         }
     }
     
@@ -69,38 +67,47 @@ class HotKeyManager {
         }
     }
     
-    private func handleEvent(_ event: NSEvent) {
+    private func handleEvent(_ event: NSEvent) -> Bool {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        var handled = false
         
         // Check Screenshot
         if event.keyCode == screenshotKey && flags.contains(screenshotMods) && flags.subtracting(screenshotMods).isEmpty {
             onScreenshotTriggered?()
+            handled = true
         }
         
         // Check OCR
         if event.keyCode == ocrKey && flags.contains(ocrMods) && flags.subtracting(ocrMods).isEmpty {
             onOCRTriggered?()
+            handled = true
         }
         
         // Check Repeat
         if event.keyCode == repeatKey && flags.contains(repeatMods) && flags.subtracting(repeatMods).isEmpty {
             onRepeatTriggered?()
+            handled = true
         }
         
         // Check Translation
         if event.keyCode == translationKey && flags.contains(translationMods) && flags.subtracting(translationMods).isEmpty {
             onTranslationTriggered?()
+            handled = true
         }
         
         // Check Cancel (Only if mods match, usually empty for ESC)
         if event.keyCode == cancelKey && flags.contains(cancelMods) && flags.subtracting(cancelMods).isEmpty {
             onCancelTriggered?()
+            handled = true
         }
         
         // Check Settings
         if event.keyCode == settingsKey && flags.contains(settingsMods) && flags.subtracting(settingsMods).isEmpty {
             onSettingsTriggered?()
+            handled = true
         }
+        
+        return handled
     }
     
     func updateScreenshotHotKey(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) {

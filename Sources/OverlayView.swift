@@ -154,6 +154,10 @@ struct OverlayView: View {
                     NSApp.keyWindow?.makeFirstResponder(nil)
                 }
             }
+            .onDisappear {
+                // Explicit cleanup to help release memory
+                viewModel.drawings.removeAll()
+            }
             // IMPORTANT: Gesture removed from here and moved to 'Gesture Layer' inside ZStack
         }
     }
