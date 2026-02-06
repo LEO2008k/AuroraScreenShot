@@ -142,10 +142,8 @@ struct OverlayView: View {
                         } else {
                             toolsBar(geometry: geometry)
                         }
-                    } else if !isQuickOCR && isTranslationMode {
-                        // Translation mode: show action bar only
-                        actionBar(geometry: geometry)
                     }
+                    // Quick OCR and Translation Mode: show only selection, no toolbars
                 }
             }
             .background(Color.clear)
