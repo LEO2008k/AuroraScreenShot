@@ -24,6 +24,14 @@ struct AIHelper {
         let choices: [Choice]
     }
     
+    func translateText(_ text: String, to language: String, completion: @escaping (Result<String, Error>) -> Void) {
+        if SettingsManager.shared.enableOllama {
+            translateWithOllama(text: text, to: language, completion: completion)
+        } else {
+            translate(text: text, to: language, completion: completion)
+        }
+    }
+
     func translate(text: String, to language: String, completion: @escaping (Result<String, Error>) -> Void) {
         let apiKey = SettingsManager.shared.aiApiKey
         guard !apiKey.isEmpty else {

@@ -90,8 +90,28 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kAuroraIntensity) }
     }
     
+    // MARK: - HotKey Helpers
+    func getHotKey(key: String) -> (Int, UInt, Bool) {
+        let code = UserDefaults.standard.integer(forKey: "\(key)_keyCode")
+        let mods = UserDefaults.standard.integer(forKey: "\(key)_modifiers")
+        let enabled = UserDefaults.standard.object(forKey: "\(key)_enabled") as? Bool ?? true
+        // Default codes if not set
+        if code == 0 {
+            if key == "hotkey" { return (18, NSEvent.ModifierFlags([.command, .shift]).rawValue, true) } // Cmd+Shift+1
+            if key == "globalHotkey" { return (19, NSEvent.ModifierFlags([.command, .shift]).rawValue, true) } // Cmd+Shift+2 (Legacy?) or Cmd+Shift+2
+            // Actually globalHotkey usually refers to the main screenshot one.
+            // Let's stick to reading values.
+        }
+        return (code, UInt(mods), enabled)
+    }
+
+    func saveHotKey(key: String, keyCode: Int, modifiers: UInt, enable: Bool) {
+        UserDefaults.standard.set(keyCode, forKey: "\(key)_keyCode")
+        UserDefaults.standard.set(modifiers, forKey: "\(key)_modifiers")
+        UserDefaults.standard.set(enable, forKey: "\(key)_enabled")
+    }
+
     // Specialized HotKey Getters
-    // Assuming getHotKey is a helper function defined elsewhere or will be added.
     var screenshotHotKey:  (Int, UInt, Bool) { getHotKey(key: "hotkey") }
     var globalHotKey:      (Int, UInt, Bool) { getHotKey(key: "globalHotkey") }
     var translationHotKey: (Int, UInt, Bool) { getHotKey(key: "translationHotkey") }

@@ -175,7 +175,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 NotificationCenter.default.post(name: Notification.Name("CloseOverlay"), object: nil)
             }
             }
-        }
+
         
         HotKeyManager.shared.onTranslationTriggered = { [weak self] in
             DispatchQueue.main.async {

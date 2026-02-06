@@ -39,26 +39,7 @@ struct PreferencesView: View {
     }
 }
 
-struct GeneralSettingsView: View {
-    @AppStorage("showTranslateButton") private var showTranslateButton = true
-    
-    var body: some View {
-        Form {
-            Section(header: Text("Toolbar")) {
-                 Toggle("Show Translate Button", isOn: $showTranslateButton)
-                     .help("Show the Translate button in the screenshot toolbar")
-                     .onChange(of: showTranslateButton) { newValue in
-                         SettingsManager.shared.showTranslateButton = newValue
-                         // If we need to notify OverlayView, but it reads from SettingsManager directly/reactively if observed properly.
-                         // Since OverlayView reads SettingsManager.shared.showTranslateButton in body, it might need a notification or @ObservedObject.
-                         // But SettingsManager is not ObservableObject usually. Let's assume re-render happens or we rely on AppStorage.
-                         // Wait, OverlayView uses SettingsManager.shared directly. It won't update automatically unless we trigger it.
-                         // But for now let's just save it.
-                     }
-            }
-        }
-    }
-}
+
 
 struct AppearanceSettingsView: View {
     @State private var blurBackground = SettingsManager.shared.blurBackground
@@ -369,9 +350,18 @@ struct GeneralSettingsView: View {
     @State private var path: String = SettingsManager.shared.saveDirectory.path
     @State private var launchAtLogin = SettingsManager.shared.launchAtLogin
     @State private var downscaleRetina = SettingsManager.shared.downscaleRetina
+    @AppStorage("showTranslateButton") private var showTranslateButton = true // Merged
     
     var body: some View {
         Form {
+            Section(header: Text("Toolbar")) {
+                 Toggle("Show Translate Button", isOn: $showTranslateButton)
+                     .help("Show the Translate button in the screenshot toolbar")
+                     .onChange(of: showTranslateButton) { newValue in
+                         SettingsManager.shared.showTranslateButton = newValue
+                     }
+            }
+            
             Section(header: Text("Save Location")) {
                 HStack {
                     Text(path)
