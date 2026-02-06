@@ -79,31 +79,11 @@ struct ScreenCapture {
         print("Captured raw image size: \(rawImage.width)x\(rawImage.height)")
         
         // Apply additional downscale for minimum quality
+        // REMOVED: 0.5x downscale was too blurry for text.
+        // Minimum quality now uses nominal resolution (1x) same as Medium.
+        // Memory saving is achieved by disabling Background Blur in OverlayView instead.
         if quality == .minimum {
-            let downscaleFactor: CGFloat = 0.5
-            let newWidth = Int(CGFloat(rawImage.width) * downscaleFactor)
-            let newHeight = Int(CGFloat(rawImage.height) * downscaleFactor)
-            
-            print("Downscaling to: \(newWidth)x\(newHeight)")
-            
-            if let ctx = CGContext(
-                data: nil,
-                width: newWidth,
-                height: newHeight,
-                bitsPerComponent: rawImage.bitsPerComponent,
-                bytesPerRow: 0,
-                space: rawImage.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)!,
-                bitmapInfo: rawImage.bitmapInfo.rawValue
-            ) {
-                ctx.interpolationQuality = .medium
-                ctx.draw(rawImage, in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
-                if let downscaled = ctx.makeImage() {
-                    print("Final downscaled image size: \(downscaled.width)x\(downscaled.height)")
-                    return (downscaled, screen)
-                }
-            }
-            
-            print("Warning: Downscaling failed, using nominal resolution")
+            print("Using minimum quality (1x nominal) - Downscale disabled for readability")
         }
         
         print("Final image size: \(rawImage.width)x\(rawImage.height)")

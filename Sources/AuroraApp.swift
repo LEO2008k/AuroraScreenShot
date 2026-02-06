@@ -208,6 +208,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // Legacy method removed: setSaveLocation -> Now in Preferences
     
     var overlayController: OverlayController?
+    
+    // Explicit cleanup helper
+    func cleanupOverlay() {
+        overlayController = nil
+    }
+    
     var resultWindowController: OCRResultWindowController? // Keep reference to prevent dealloc
 
     @objc func captureScreen() {

@@ -71,33 +71,36 @@ struct OverlayView: View {
                 // Optimized Background Layer with Blur
                 ZStack {
                     // Base image with conditional blur
-                    Image(decorative: image, scale: 1.0)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .blur(radius: blurBackground ? min(blurAmount, 15) : 0)
-                    
-                    // Dimming overlay (only when NOT blurring)
-                    if !blurBackground {
-                        Path { path in
-                            path.addRect(CGRect(origin: .zero, size: geometry.size))
-                            if selectionRect != .zero {
-                                path.addRect(selectionRect)
-                            }
-                        }
-                        .fill(Color.black.opacity(0.15), style: FillStyle(eoFill: true))
-                        .allowsHitTesting(false)
-                    }
-                    
-                    // Clear selection area (only when blurring)
-                    if blurBackground && selectionRect != .zero {
+                    // OPTIMIZATION: Disable blur on Minimum quality to save memory
+                        let shouldBlur = blurBackground && SettingsManager.shared.quality != .minimum
+                        
                         Image(decorative: image, scale: 1.0)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: geometry.size.width, height: geometry.size.height)
-                            .clipShape(Rectangle().path(in: selectionRect))
+                            .blur(radius: shouldBlur ? min(blurAmount, 15) : 0)
+                        
+                        // Dimming overlay (for when blur is disabled or Minimum quality)
+                        if !shouldBlur {
+                            Path { path in
+                                path.addRect(CGRect(origin: .zero, size: geometry.size))
+                                if selectionRect != .zero {
+                                    path.addRect(selectionRect)
+                                }
+                            }
+                            .fill(Color.black.opacity(0.3), style: FillStyle(eoFill: true))
+                            .allowsHitTesting(false)
+                        }
+                        
+                        // Clear selection area (only when blurring)
+                        if shouldBlur && selectionRect != .zero {
+                            Image(decorative: image, scale: 1.0)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                                .clipShape(Rectangle().path(in: selectionRect))
+                        }
                     }
-                }
                 .drawingGroup() // Composite into single layer for performance
                 .position(x: geometry.size.width/2, y: geometry.size.height/2)
                 
