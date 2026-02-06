@@ -17,9 +17,17 @@ enum CaptureQuality: String, Codable, CaseIterable {
     
     var memoryEstimate: String {
         switch self {
-        case .maximum: return "~2GB for full screen"
-        case .medium: return "~500MB"
-        case .minimum: return "~200MB"
+        case .maximum: return "Max Quality (HDR, ~2.5GB limit)"
+        case .medium: return "Balanced (~1GB limit)"
+        case .minimum: return "Low Memory (~300MB limit)"
+        }
+    }
+    
+    var maxMemoryBytes: Int {
+        switch self {
+        case .maximum: return 2500 * 1024 * 1024 // 2.5 GB
+        case .medium: return 1024 * 1024 * 1024  // 1 GB
+        case .minimum: return 300 * 1024 * 1024  // 300 MB
         }
     }
 }

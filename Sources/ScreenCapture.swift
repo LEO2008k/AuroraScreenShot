@@ -51,18 +51,19 @@ struct ScreenCapture {
         
         // Determine quality settings - support three levels
         let quality = SettingsManager.shared.quality
-        let imageOptions: CGWindowImageOption
-        
+        var imageOptions: CGWindowImageOption = [] // Default is empty (Nominal Resolution)
+
         switch quality {
         case .maximum:
+            // Use BestResolution to capture full backing store pixels (Retina 2x, etc.)
+            // capable of capturing HDR/Deep Color if the display supports it.
             imageOptions = [.bestResolution]
-            print("Using maximum quality (2x Retina) - High memory usage")
+            print("Using maximum quality (BestResolution/HDR capable)")
         case .medium:
-            imageOptions = [.nominalResolution]
+            // Medium/Minimum use Nominal Resolution (1x)
             print("Using medium quality (1x nominal) - Balanced")
         case .minimum:
-            imageOptions = [.nominalResolution]
-            print("Using minimum quality (1x + downscale) - Low memory")
+            print("Using minimum quality (1x nominal) - Low memory")
         }
         
         // Capture screen
@@ -76,17 +77,47 @@ struct ScreenCapture {
             return nil
         }
         
-        print("Captured raw image size: \(rawImage.width)x\(rawImage.height)")
+        // Check Memory Limits and Resize if needed
+        let width = rawImage.width
+        let height = rawImage.height
+        let estimatedBytes = width * height * 4 // 4 bytes per pixel (RGBA)
+        let limitBytes = quality.maxMemoryBytes
         
-        // Apply additional downscale for minimum quality
-        // REMOVED: 0.5x downscale was too blurry for text.
-        // Minimum quality now uses nominal resolution (1x) same as Medium.
-        // Memory saving is achieved by disabling Background Blur in OverlayView instead.
-        if quality == .minimum {
-            print("Using minimum quality (1x nominal) - Downscale disabled for readability")
+        print("Captured size: \(width)x\(height), Est. Memory: \(estimatedBytes / 1024 / 1024) MB, Limit: \(limitBytes / 1024 / 1024) MB")
+        
+        if estimatedBytes > limitBytes {
+            print("⚠️ Memory limit exceeded! Downscaling...")
+            // Calculate scale to fit within limit (area ratio)
+            let scale = sqrt(Double(limitBytes) / Double(estimatedBytes))
+            let newWidth = Int(Double(width) * scale)
+            let newHeight = Int(Double(height) * scale)
+            
+            print("Resizing to: \(newWidth)x\(newHeight) (Scale: \(String(format: "%.2f", scale)))")
+            
+            // Create context for resizing
+            let colorSpace = rawImage.colorSpace ?? CGColorSpaceCreateDeviceRGB()
+            guard let context = CGContext(
+                data: nil,
+                width: newWidth,
+                height: newHeight,
+                bitsPerComponent: rawImage.bitsPerComponent,
+                bytesPerRow: 0, // Calculate automatically
+                space: colorSpace,
+                bitmapInfo: rawImage.bitmapInfo.rawValue
+            ) else {
+                print("Failed to create resize context, using original")
+                return (rawImage, screen)
+            }
+            
+            // Draw original image into smaller context
+            context.interpolationQuality = .high
+            context.draw(rawImage, in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+            
+            if let resizedImage = context.makeImage() {
+                return (resizedImage, screen)
+            }
         }
         
-        print("Final image size: \(rawImage.width)x\(rawImage.height)")
         return (rawImage, screen)
     }
 }
