@@ -92,6 +92,10 @@ class OverlayController: NSWindowController {
             eventMonitor = nil
         }
         
+        // Break potential strong reference cycles in SwiftUI hosting
+        // This is critical to release the heavy CGImage held by OverlayView
+        window?.contentView = nil
+        
         // Close and release window
         window?.orderOut(nil)
         window?.close()

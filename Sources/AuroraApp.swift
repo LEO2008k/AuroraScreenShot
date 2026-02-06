@@ -265,21 +265,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
             guard let self = self else { return }
             
-            // Capture active screen (where mouse is)
-            guard let result = ScreenCapture.captureActiveScreen() else {
-                print("Failed to capture screen")
+            autoreleasepool {
+                // Capture active screen (where mouse is)
+                guard let result = ScreenCapture.captureActiveScreen() else {
+                    print("Failed to capture screen")
+                    self.statusItem.button?.isHidden = false
+                    return
+                }
+                
+                // Restore menu bar icon
                 self.statusItem.button?.isHidden = false
-                return
+                
+                // Show overlay with captured image on the correct screen
+                self.overlayController = OverlayController(image: result.image, screen: result.screen, isQuickOCR: ocrOnly, isTranslationMode: isTranslationMode)
+                self.overlayController?.showWindow(nil)
+                self.overlayController?.window?.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
             }
-            
-            // Restore menu bar icon
-            self.statusItem.button?.isHidden = false
-            
-            // Show overlay with captured image on the correct screen
-            self.overlayController = OverlayController(image: result.image, screen: result.screen, isQuickOCR: ocrOnly, isTranslationMode: isTranslationMode)
-            self.overlayController?.showWindow(nil)
-            self.overlayController?.window?.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
         }
     }
 }
