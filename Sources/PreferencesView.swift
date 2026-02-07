@@ -117,6 +117,21 @@ struct AppearanceSettingsView: View {
                 }
             }
             
+            Section(header: Text("Interface Scale")) {
+                HStack {
+                    Text("Scale:")
+                    Slider(value: $uiScale, in: 0.5...1.5, step: 0.1)
+                        .onChange(of: uiScale) { newValue in
+                            SettingsManager.shared.uiScale = newValue
+                        }
+                    Text("\(Int(uiScale * 100))%")
+                }
+                
+                Text("Adjust the size of the overlay toolbar and buttons.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
             Section(header: Text("OCR Editor Appearance")) {
                 HStack {
                     Text("Font Size:")
