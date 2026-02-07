@@ -735,7 +735,7 @@ struct AnimatedLogoText: View {
                 )
                 .hueRotation(.degrees(hueRotation))
             
-            Text("🇨🇦") // Flag outside gradient to keep colors
+            Text("🇨🇦🇺🇦") // Flags outside gradient to keep colors
         }
         .font(.title.bold())
         .onAppear {
@@ -1047,25 +1047,36 @@ struct AboutSettingsView: View {
 }
 
 struct HistorySettingsView: View {
+    // Translation History
     @State private var saveHistory = SettingsManager.shared.saveHistory
     @State private var retentionHours = SettingsManager.shared.historyRetentionHours
-    @ObservedObject var manager = HistoryManager.shared
+    @ObservedObject var translationManager = HistoryManager.shared
+    
+    // OCR History
+    @State private var saveOCRHistory = SettingsManager.shared.saveOCRHistory
+    @State private var ocrRetentionHours = SettingsManager.shared.ocrHistoryRetentionHours
+    @ObservedObject var ocrManager = OCRHistoryManager.shared
     
     @State private var isCustomMode = false
+    @State private var isOCRCustomMode = false
     
     // Presets for the picker
     let presets = [3, 6, 12, 24, 48, 120, -1]
     
     var body: some View {
         Form {
-            Section(header: Text("Privacy & Storage")) {
-                Toggle("Enable History Saving", isOn: $saveHistory)
+            // ============ TRANSLATION HISTORY ============
+            Section(header: HStack {
+                Image(systemName: "globe")
+                Text("Translation History")
+            }) {
+                Toggle("Enable Translation History", isOn: $saveHistory)
                     .onChange(of: saveHistory) { newValue in
                         SettingsManager.shared.saveHistory = newValue
                     }
                 
                 if !saveHistory {
-                    Text("History is NOT saved. (Recommended for Privacy)")
+                    Text("Translation history is NOT saved.")
                         .font(.caption)
                         .foregroundColor(.green)
                 } else {
@@ -1075,7 +1086,7 @@ struct HistorySettingsView: View {
                 }
                 
                 // File Location
-                if let url = manager.historyFileURL {
+                if let url = translationManager.historyFileURL {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Storage Path:")
                             .font(.caption2)
@@ -1099,18 +1110,17 @@ struct HistorySettingsView: View {
             }
             
             if saveHistory {
-                Section(header: Text("Retention Policy")) {
+                Section(header: Text("Translation Retention Policy")) {
                     // Custom Binding for Picker
                     let pickerBinding = Binding<Int>(
                         get: {
                             if isCustomMode { return 0 }
                             if presets.contains(retentionHours) { return retentionHours }
-                            return 0 // Default to custom if value is weird
+                            return 0
                         },
                         set: { newValue in
                             if newValue == 0 {
                                 isCustomMode = true
-                                // If switching to custom, keep current hours but enable editing
                             } else {
                                 isCustomMode = false
                                 retentionHours = newValue
@@ -1120,7 +1130,7 @@ struct HistorySettingsView: View {
                         }
                     )
                     
-                    Picker("Auto-delete history older than:", selection: pickerBinding) {
+                    Picker("Auto-delete older than:", selection: pickerBinding) {
                         Text("3 Hours").tag(3)
                         Text("6 Hours").tag(6)
                         Text("12 Hours").tag(12)
@@ -1132,7 +1142,6 @@ struct HistorySettingsView: View {
                         Text("Custom...").tag(0)
                     }
                     
-                    // Show TextField if Custom Mode
                     if isCustomMode {
                         HStack {
                             Text("Custom Retention:")
@@ -1141,13 +1150,9 @@ struct HistorySettingsView: View {
                                 .frame(width: 80)
                                 .onChange(of: retentionHours) { val in
                                     var safeVal = val
-                                    // Constraint: Max 336 hours (2 weeks)
                                     if safeVal > 336 { safeVal = 336 }
-                                    // Constraint: Min 1 hour
                                     if safeVal < 1 { safeVal = 1 }
-                                    
                                     if safeVal != val { retentionHours = safeVal }
-                                    
                                     SettingsManager.shared.historyRetentionHours = safeVal
                                 }
                             Text("hours (Max 336)")
@@ -1166,23 +1171,153 @@ struct HistorySettingsView: View {
                     }
                 }
                 
-                Section(header: Text("Management")) {
+                Section(header: Text("Translation Management")) {
                     HStack {
                         Text("Current Items:")
-                        Text("\(manager.history.count)")
+                        Text("\(translationManager.history.count)")
                             .foregroundColor(.secondary)
                     }
                     
                     Button(action: {
                         HistoryWindowController.shared.show()
                     }) {
-                        Label("Open History Window", systemImage: "macwindow")
+                        Label("Open Translation History", systemImage: "clock")
                     }
                     
                     Button(action: {
                         HistoryManager.shared.clearAll()
                     }) {
-                        Label("Clear All History", systemImage: "trash")
+                        Label("Clear All Translation History", systemImage: "trash")
+                            .foregroundColor(.red)
+                    }
+                }
+            }
+            
+            Divider()
+                .padding(.vertical, 8)
+            
+            // ============ OCR HISTORY ============
+            Section(header: HStack {
+                Image(systemName: "text.viewfinder")
+                Text("OCR History")
+            }) {
+                Toggle("Enable OCR History", isOn: $saveOCRHistory)
+                    .onChange(of: saveOCRHistory) { newValue in
+                        SettingsManager.shared.saveOCRHistory = newValue
+                    }
+                
+                if !saveOCRHistory {
+                    Text("OCR history is NOT saved.")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                } else {
+                    Text("OCR results are saved locally in Application Support.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                // File Location
+                if let url = ocrManager.historyFileURL {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Storage Path:")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        HStack {
+                            Image(systemName: "internaldrive")
+                            Text(url.path)
+                                .font(.caption2)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                                .textSelection(.enabled)
+                            Spacer()
+                            Button("Show") {
+                                NSWorkspace.shared.activateFileViewerSelecting([url])
+                            }
+                            .font(.caption)
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+            }
+            
+            if saveOCRHistory {
+                Section(header: Text("OCR Retention Policy")) {
+                    let ocrPickerBinding = Binding<Int>(
+                        get: {
+                            if isOCRCustomMode { return 0 }
+                            if presets.contains(ocrRetentionHours) { return ocrRetentionHours }
+                            return 0
+                        },
+                        set: { newValue in
+                            if newValue == 0 {
+                                isOCRCustomMode = true
+                            } else {
+                                isOCRCustomMode = false
+                                ocrRetentionHours = newValue
+                                SettingsManager.shared.ocrHistoryRetentionHours = newValue
+                                OCRHistoryManager.shared.cleanOldEntries()
+                            }
+                        }
+                    )
+                    
+                    Picker("Auto-delete older than:", selection: ocrPickerBinding) {
+                        Text("3 Hours").tag(3)
+                        Text("6 Hours").tag(6)
+                        Text("12 Hours").tag(12)
+                        Text("24 Hours").tag(24)
+                        Text("48 Hours").tag(48)
+                        Text("5 Days").tag(120)
+                        Text("Keep Forever").tag(-1)
+                        Divider()
+                        Text("Custom...").tag(0)
+                    }
+                    
+                    if isOCRCustomMode {
+                        HStack {
+                            Text("Custom Retention:")
+                            TextField("Hours", value: $ocrRetentionHours, format: .number)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 80)
+                                .onChange(of: ocrRetentionHours) { val in
+                                    var safeVal = val
+                                    if safeVal > 336 { safeVal = 336 }
+                                    if safeVal < 1 { safeVal = 1 }
+                                    if safeVal != val { ocrRetentionHours = safeVal }
+                                    SettingsManager.shared.ocrHistoryRetentionHours = safeVal
+                                }
+                            Text("hours (Max 336)")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    if ocrRetentionHours > 0 {
+                        Text("History older than \(ocrRetentionHours) hours will be automatically deleted.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    } else if ocrRetentionHours == -1 {
+                         Text("Warning: History will grow indefinitely.")
+                            .font(.caption)
+                            .foregroundColor(.orange)
+                    }
+                }
+                
+                Section(header: Text("OCR Management")) {
+                    HStack {
+                        Text("Current Items:")
+                        Text("\(ocrManager.history.count)")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Button(action: {
+                        OCRHistoryWindowController.shared.show()
+                    }) {
+                        Label("Open OCR History", systemImage: "text.viewfinder")
+                    }
+                    
+                    Button(action: {
+                        OCRHistoryManager.shared.clearAll()
+                    }) {
+                        Label("Clear All OCR History", systemImage: "trash")
                             .foregroundColor(.red)
                     }
                 }
@@ -1192,14 +1327,20 @@ struct HistorySettingsView: View {
         .onAppear {
             saveHistory = SettingsManager.shared.saveHistory
             retentionHours = SettingsManager.shared.historyRetentionHours
-            // Determine if custom mode
+            saveOCRHistory = SettingsManager.shared.saveOCRHistory
+            ocrRetentionHours = SettingsManager.shared.ocrHistoryRetentionHours
+            
             if !presets.contains(retentionHours) {
                 isCustomMode = true
-            } else {
-                isCustomMode = false
+            }
+            if !presets.contains(ocrRetentionHours) {
+                isOCRCustomMode = true
             }
         }
     }
 }
+
+
+
 
 

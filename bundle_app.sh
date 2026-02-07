@@ -103,7 +103,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<EOF
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>$SEM_VER</string>
+    <string>3.5.0</string>
     <key>CFBundleVersion</key>
     <string>$BUILD_NUM</string>
     <key>NSHighResolutionCapable</key>

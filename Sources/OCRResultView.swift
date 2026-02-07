@@ -33,7 +33,6 @@ struct OCRResultView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header
-            // Header
             HStack {
                 Button(action: {
                     // Send action safely
@@ -52,10 +51,43 @@ struct OCRResultView: View {
                     .font(.headline)
                     .foregroundColor(.secondary)
                 Spacer()
+                
+                // Refresh Buttons
+                Menu {
+                    Button(action: {
+                        text = ""
+                    }) {
+                        Label("Clear Original Text", systemImage: "doc.text")
+                    }
+                    
+                    Button(action: {
+                        translatedText = ""
+                        lastTranslatedInput = ""
+                    }) {
+                        Label("Clear Translation", systemImage: "globe")
+                    }
+                    
+                    Divider()
+                    
+                    Button(action: {
+                        text = ""
+                        translatedText = ""
+                        lastTranslatedInput = ""
+                    }) {
+                        Label("Clear All", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundColor(.secondary)
+                }
+                .menuStyle(.borderlessButton)
+                .help("Clear Text")
+                .padding(.trailing, 8)
+                
                 Button(action: {
-                    HistoryWindowController.shared.show()
+                    OCRHistoryWindowController.shared.show()
                 }) {
-                    Label("History", systemImage: "clock")
+                    Label("OCR History", systemImage: "text.viewfinder")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -224,6 +256,11 @@ struct OCRResultView: View {
             let detected = AIHelper.shared.detectLanguage(text: text)
             if detected != "Undetermined" {
                 // We don't change 'sourceLanguage' to detected, we keep it 'Auto'
+            }
+            
+            // Save to OCR History
+            if SettingsManager.shared.saveOCRHistory && !text.isEmpty {
+                OCRHistoryManager.shared.addEntry(text: text)
             }
             
             // Auto-translate if enabled and it's not the placeholder text

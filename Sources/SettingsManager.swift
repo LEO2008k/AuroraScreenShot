@@ -458,6 +458,23 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kHistoryRetentionHours) }
     }
     
+    // OCR History Settings
+    private let kSaveOCRHistory = "SaveOCRHistory"
+    private let kOCRHistoryRetentionHours = "OCRHistoryRetentionHours"
+    
+    var saveOCRHistory: Bool {
+        get { UserDefaults.standard.bool(forKey: kSaveOCRHistory) }
+        set { UserDefaults.standard.set(newValue, forKey: kSaveOCRHistory) }
+    }
+    
+    var ocrHistoryRetentionHours: Int {
+        get { 
+            let val = UserDefaults.standard.integer(forKey: kOCRHistoryRetentionHours)
+            return val == 0 ? 48 : val // Default 48 hours
+        }
+        set { UserDefaults.standard.set(newValue, forKey: kOCRHistoryRetentionHours) }
+    }
+    
     // OCR Editor Appearance
     private let kOCRFontSize = "OCRFontSize"
     private let kOCREditorBgMode = "OCREditorBgMode" // "System", "Dark", "Light", "Custom"
