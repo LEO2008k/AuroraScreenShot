@@ -867,7 +867,7 @@ struct AboutSettingsView: View {
                         Link(destination: URL(string: "https://www.patreon.com/posts/meet-aurora-shot-149870544")!) {
                             HStack {
                                 Image(systemName: "heart.fill").foregroundColor(.red)
-                                Text("Support on Patreon")
+                                Text("Patreon")
                             }
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
@@ -876,6 +876,23 @@ struct AboutSettingsView: View {
                             .overlay(
                                 RoundedRectangle(cornerRadius: 6)
                                     .stroke(Color.orange.opacity(0.5), lineWidth: 1)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        
+                        // PayPal Button
+                        Link(destination: URL(string: "https://paypal.me/LevkoKravchuk?country.x=CA&locale.x=en_US")!) {
+                            HStack {
+                                Image(systemName: "cup.and.saucer.fill").foregroundColor(.yellow)
+                                Text("Donate")
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.yellow.opacity(0.1))
+                            .cornerRadius(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.yellow.opacity(0.5), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
