@@ -53,6 +53,7 @@ class SettingsManager {
     
     private let kBlurBackground = "BlurBackground"
     private let kBlurAmount = "BlurAmount"
+    private let kUIScale = "UIScale"
     private let kAIApiKey = "AIApiKey"
     private let kAIPrompt = "AIPrompt"
     private let kLaunchAtLogin = "LaunchAtLogin"
@@ -60,6 +61,14 @@ class SettingsManager {
     var blurBackground: Bool {
         get { UserDefaults.standard.bool(forKey: kBlurBackground) }
         set { UserDefaults.standard.set(newValue, forKey: kBlurBackground) }
+    }
+    
+    var uiScale: Double {
+        get { 
+            let val = UserDefaults.standard.double(forKey: kUIScale)
+            return val == 0 ? 1.0 : val
+        }
+        set { UserDefaults.standard.set(newValue, forKey: kUIScale) }
     }
     
     var blurAmount: Double {

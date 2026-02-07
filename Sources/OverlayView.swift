@@ -45,6 +45,7 @@ struct OverlayView: View {
     // Preferences
     @AppStorage("BlurBackground") private var blurBackground = false
     @AppStorage("BlurAmount") private var blurAmount = 5.0
+    @AppStorage("UIScale") private var uiScale: Double = 1.0
     @AppStorage("ShowTimestamp") private var showTimestampButton = false
     @AppStorage("ShowWatermark") private var showWatermarkButton = false
     @AppStorage("EnableAurora") private var enableAurora = false
@@ -328,6 +329,7 @@ struct OverlayView: View {
                 ActionIconBtn(icon: "gearshape", label: "Settings", hoverText: "Settings", activeTooltip: $activeTooltip, action: openSettings)
             }
             .padding(8).background(Color(NSColor.windowBackgroundColor).opacity(0.95)).cornerRadius(6).shadow(radius: 4)
+            .scaleEffect(uiScale) // Apply UI Scale
         }
         .position(x: actionBarX, y: layoutY)
     }
@@ -398,6 +400,7 @@ struct OverlayView: View {
              }
          }
          .padding(6).background(Color(NSColor.windowBackgroundColor).opacity(0.95)).cornerRadius(6).shadow(radius: 4)
+         .scaleEffect(uiScale) // Apply UI Scale
          .position(x: toolsBarX, y: toolsBarY)
     }
     
