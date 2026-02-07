@@ -896,7 +896,7 @@ struct AboutSettingsView: View {
                         .buttonStyle(.plain)
                         
                         // PayPal Button
-                        Link(destination: URL(string: "https://paypal.me/LevkoKravchuk?country.x=CA&locale.x=en_US")!) {
+                        Link(destination: URL(string: "https://www.paypal.com/donate/?business=UHLULJG6HMGS8&no_recurring=0&currency_code=CAD")!) {
                             HStack {
                                 Image(systemName: "cup.and.saucer.fill").foregroundColor(.yellow)
                                 Text("Donate")
