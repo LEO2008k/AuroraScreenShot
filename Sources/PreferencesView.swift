@@ -119,7 +119,7 @@ struct AppearanceSettingsView: View {
             
             Section(header: Text("Interface Scale")) {
                 HStack {
-                    Text("Scale:")
+                    Text("Interface Scale:")
                     Slider(value: $uiScale, in: 0.5...1.5, step: 0.1)
                         .onChange(of: uiScale) { newValue in
                             SettingsManager.shared.uiScale = newValue
