@@ -300,6 +300,22 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kOllamaHost) }
     }
     
+    // Translation Prompt Settings
+    private let kOllamaTranslationPrompt = "OllamaTranslationPrompt"
+    
+    var ollamaTranslationPrompt: String {
+        get { 
+            UserDefaults.standard.string(forKey: kOllamaTranslationPrompt) ?? 
+            """
+            You are a professional translator. 
+            Output ONLY the translated text. 
+            Do NOT include any explanations, notes, or conversational filler.
+            If the text is already in the target language, keep it natural.
+            """
+        }
+        set { UserDefaults.standard.set(newValue, forKey: kOllamaTranslationPrompt) }
+    }
+    
     var ollamaModel: String {
         get { UserDefaults.standard.string(forKey: kOllamaModel) ?? "llava" }
         set { UserDefaults.standard.set(newValue, forKey: kOllamaModel) }

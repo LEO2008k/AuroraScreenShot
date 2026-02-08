@@ -184,6 +184,7 @@ struct AISettingsView: View {
     @State private var ollamaHost = SettingsManager.shared.ollamaHost
     @State private var ollamaModel = SettingsManager.shared.ollamaModel
     @State private var ollamaTranslationModel = SettingsManager.shared.ollamaTranslationModel
+    @State private var ollamaTranslationPrompt = SettingsManager.shared.ollamaTranslationPrompt
     @State private var maxImageSizeKB = SettingsManager.shared.maxImageSizeKB
     @State private var maxTranslationSizeKB = SettingsManager.shared.maxTranslationSizeKB
     @State private var languages: [String] = SettingsManager.shared.translationLanguages
@@ -219,7 +220,7 @@ struct AISettingsView: View {
                         SettingsManager.shared.aiApiKey = newValue
                     }
                 
-                Text("Custom Prompt:")
+                Text("Image Analysis Prompt:")
                 TextEditor(text: $prompt)
                     .frame(height: 50)
                     .border(Color.secondary.opacity(0.2))
@@ -263,6 +264,20 @@ struct AISettingsView: View {
                                     SettingsManager.shared.ollamaTranslationModel = newValue
                                 }
                         }
+                        
+                        Divider()
+                        
+                        Text("Translation System Prompt:")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        TextEditor(text: $ollamaTranslationPrompt)
+                            .frame(height: 60)
+                            .font(.system(size: 11))
+                            .border(Color.secondary.opacity(0.2))
+                            .onChange(of: ollamaTranslationPrompt) { newValue in
+                                SettingsManager.shared.ollamaTranslationPrompt = newValue
+                            }
                     }
                     
                     Divider()
@@ -361,6 +376,8 @@ struct AISettingsView: View {
             enableOllama = SettingsManager.shared.enableOllama
             ollamaHost = SettingsManager.shared.ollamaHost
             ollamaModel = SettingsManager.shared.ollamaModel
+            ollamaTranslationModel = SettingsManager.shared.ollamaTranslationModel
+            ollamaTranslationPrompt = SettingsManager.shared.ollamaTranslationPrompt
             defaultTargetLang = SettingsManager.shared.defaultTargetLanguage
         }
     }

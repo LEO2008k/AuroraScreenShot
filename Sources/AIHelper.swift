@@ -222,45 +222,45 @@ struct AIHelper {
         return "Auto"
     }
 
+    // Simplified Request for manual encoding to avoid Any Codable issues
     func translateWithOllama(text: String, from source: String = "Auto", to target: String, completion: @escaping (Result<String, Error>) -> Void) {
         let host = SettingsManager.shared.ollamaHost
         let model = SettingsManager.shared.ollamaTranslationModel
         
-        guard let url = URL(string: "\(host)/api/generate") else {
+        guard let url = URL(string: "\(host)/api/chat") else {
             completion(.failure(NSError(domain: "OCRShot", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama Host URL"])))
             return
         }
         
         let sourceLang = source == "Auto" ? "the detected language" : source
-        let prompt = """
-        You are a professional translator. Translate the following text from \(sourceLang) to \(target).
         
-        IMPORTANT RULES:
-        1. Output ONLY the translated text.
-        2. Do NOT include any explanations, notes, or introductions (like "Here is the translation").
-        3. Do NOT add conversational filler.
-        4. If the text is already partly in the target language, keep it natural.
+        // Use the customizable prompt from settings
+        let systemPrompt = SettingsManager.shared.ollamaTranslationPrompt + " Translate from \(sourceLang) to \(target)."
         
-        Text to translate:
-        \(text)
-        """
+        let messages = [
+            ["role": "system", "content": systemPrompt],
+            ["role": "user", "content": text]
+        ]
         
-        let body = OllamaRequest(
-            model: model,
-            prompt: prompt,
-            images: [],
-            stream: false
-        )
+        // Manual dictionary creation to handle mixed types (Bool, Array, Dict)
+        let body: [String: Any] = [
+            "model": model,
+            "messages": messages,
+            "stream": false,
+            "options": [
+                "temperature": 0.1 // Low temperature for deterministic/strict output
+            ]
+        ]
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 60 // Translation might take a moment
+        request.timeoutInterval = 60
         
         let session = URLSession.shared
         
         do {
-            request.httpBody = try JSONEncoder().encode(body)
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
         } catch {
             completion(.failure(error))
             return
@@ -284,10 +284,15 @@ struct AIHelper {
                      return
                 }
 
-                let decoded = try JSONDecoder().decode(OllamaResponse.self, from: data)
-                completion(.success(decoded.response.trimmingCharacters(in: .whitespacesAndNewlines)))
-            } catch {
-                completion(.failure(error))
+                // Check for 'message' -> 'content' in response
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let message = json["message"] as? [String: Any],
+                   let content = message["content"] as? String {
+                    completion(.success(content.trimmingCharacters(in: .whitespacesAndNewlines)))
+                } else {
+                    // Fallback try decoding struct if standard fails (though we used manual dict parsing above)
+                    completion(.failure(NSError(domain: "OCRShot", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid response format from Ollama"])))
+                }
             }
         }.resume()
     }
