@@ -52,37 +52,7 @@ struct OCRResultView: View {
                     .foregroundColor(.secondary)
                 Spacer()
                 
-                // Refresh Buttons
-                Menu {
-                    Button(action: {
-                        text = ""
-                    }) {
-                        Label("Clear Original Text", systemImage: "doc.text")
-                    }
-                    
-                    Button(action: {
-                        translatedText = ""
-                        lastTranslatedInput = ""
-                    }) {
-                        Label("Clear Translation", systemImage: "globe")
-                    }
-                    
-                    Divider()
-                    
-                    Button(action: {
-                        text = ""
-                        translatedText = ""
-                        lastTranslatedInput = ""
-                    }) {
-                        Label("Clear All", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundColor(.secondary)
-                }
-                .menuStyle(.borderlessButton)
-                .help("Clear Text")
-                .padding(.trailing, 8)
+                // Refresh/Clear buttons moved to individual sections as per user request
                 
                 Button(action: {
                     OCRHistoryWindowController.shared.show()
@@ -120,6 +90,16 @@ struct OCRResultView: View {
                          Text(getStats(text))
                              .font(.caption2)
                              .foregroundColor(text.count > 2000 ? .orange : .secondary)
+                        
+                         if !text.isEmpty {
+                             Button(action: { text = "" }) {
+                                 Image(systemName: "xmark.circle.fill")
+                                     .foregroundColor(.secondary)
+                             }
+                             .buttonStyle(.plain)
+                             .help("Clear Original Text")
+                             .padding(.leading, 4)
+                         }
                     }
                     .padding(.horizontal)
                     
@@ -153,6 +133,17 @@ struct OCRResultView: View {
                                 Text(getStats(translatedText))
                                     .font(.caption2)
                                     .foregroundColor(.secondary)
+                                
+                                Button(action: { 
+                                    translatedText = ""
+                                    lastTranslatedInput = ""
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.secondary)
+                                }
+                                .buttonStyle(.plain)
+                                .help("Clear Translation")
+                                .padding(.leading, 4)
                             }
                         }
                         .padding(.horizontal)
