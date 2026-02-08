@@ -220,7 +220,10 @@ struct AISettingsView: View {
                         SettingsManager.shared.aiApiKey = newValue
                     }
                 
-                Text("Image Analysis Prompt:")
+                Text("Image Analysis Prompt (Optional):")
+                Text("Leave empty for pure Text Extraction (OCR). Use for description (e.g. 'Describe this image').")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 TextEditor(text: $prompt)
                     .frame(height: 50)
                     .border(Color.secondary.opacity(0.2))
