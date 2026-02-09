@@ -396,8 +396,8 @@ struct OverlayView: View {
                 ActionIconBtn(icon: "square.and.arrow.down", label: "Save", hoverText: "Save to File", activeTooltip: $activeTooltip, action: { saveImage(geometry: geometry) })
                 ActionIconBtn(icon: "square.and.arrow.up", label: "Share", hoverText: "Share Image", activeTooltip: $activeTooltip, action: { shareSelection(geometry: geometry) })
                 Divider().frame(height: 20)
-                if showTimestampButton { ActionIconBtn(icon: "clock", label: "Timestamp", isActive: isTimestampApplied, hoverText: "Toggle", activeTooltip: $activeTooltip) { isTimestampApplied.toggle() } }
-                if showWatermarkButton { ActionIconBtn(icon: "crown", label: "Watermark", isActive: isWatermarkApplied, hoverText: "Toggle", activeTooltip: $activeTooltip) { isWatermarkApplied.toggle() } }
+                if showTimestampButton { ActionIconBtn(icon: "clock", label: "Timestamp", isActive: isTimestampApplied, hoverText: "Timestamp", activeTooltip: $activeTooltip) { isTimestampApplied.toggle() } }
+                if showWatermarkButton { ActionIconBtn(icon: "crown", label: "Watermark", isActive: isWatermarkApplied, hoverText: "Watermark", activeTooltip: $activeTooltip) { isWatermarkApplied.toggle() } }
                 if showTimestampButton || showWatermarkButton { Divider().frame(height: 20) }
                 
                 if SettingsManager.shared.showTranslateButton {
