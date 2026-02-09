@@ -699,6 +699,30 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
                         let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
                          ctx?.setLineWidth(shape.lineWidth * scaleX)
                          ctx?.stroke(CGRect(x: r.minX*scaleX, y: CGFloat(image.height)-(r.maxY*scaleY), width: r.width*scaleX, height: r.height*scaleY))
+                    } else if shape.type == .blurRect {
+                        let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
+                        
+                        // Scale rect to final image coordinates
+                        let scaledRect = CGRect(x: r.minX*scaleX, y: CGFloat(image.height)-(r.maxY*scaleY), width: r.width*scaleX, height: r.height*scaleY)
+                        
+                        // Crop region from current context, apply blur, and draw back
+                        if let ctx = ctx,
+                           let contextImage = ctx.makeImage(),
+                           let region = contextImage.cropping(to: scaledRect) {
+                            
+                            // Create blurred version with CIFilter
+                            let ciImage = CIImage(cgImage: region)
+                            let filter = CIFilter(name: "CIGaussianBlur")
+                            filter?.setValue(ciImage, forKey: kCIInputImageKey)
+                            filter?.setValue(30.0, forKey: kCIInputRadiusKey) // Match overlay blur radius (line 582)
+                            
+                            if let output = filter?.outputImage {
+                                let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+                                if let cgBlurred = ciContext.createCGImage(output, from: ciImage.extent) {
+                                    ctx.draw(cgBlurred, in: scaledRect)
+                                }
+                            }
+                        }
                     }
                 }
                 
