@@ -132,12 +132,19 @@ struct AIHelper {
         }
         
         // 2. MODE: AI Analysis (Custom Prompt present)
-        // If user wants to "Describe this image", we proceed to call Ollama (llava)
+        // If user wants to "Describe this image", we proceed to call Ollama (llava) via /api/chat
+        
+        // Smart Language Detection: Ensure model replies in the prompt's language
+        let language = detectLanguage(text: promptToUse)
+        var finalPrompt = promptToUse
+        if language != "English" && language != "Auto" && language != "Undetermined" {
+             finalPrompt += " (Respond in \(language))"
+        }
         
         let host = SettingsManager.shared.ollamaHost
-        let model = SettingsManager.shared.ollamaModel
+        let model = SettingsManager.shared.ollamaModel // e.g. "llava"
         
-        guard let url = URL(string: "\(host)/api/generate") else {
+        guard let url = URL(string: "\(host)/api/chat") else {
             completion(.failure(NSError(domain: "OCRShot", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid Ollama Host URL"])))
             return
         }
@@ -152,21 +159,31 @@ struct AIHelper {
         }
         let base64Image = pngData.base64EncodedString()
         
-        let body = OllamaRequest(
-            model: model,
-            prompt: promptToUse,
-            images: [base64Image],
-            stream: false
-        )
+        // Payload for /api/chat
+        let messages: [[String: Any]] = [
+            [
+                "role": "user",
+                "content": finalPrompt,
+                "images": [base64Image]
+            ]
+        ]
+        
+        let body: [String: Any] = [
+            "model": model,
+            "messages": messages,
+            "stream": false,
+            "options": [
+                "temperature": 0.2 // Slightly creative but focused
+            ]
+        ]
         
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60 // Longer timeout for image analysis
         
         // Check Proxy
         let proxy = SettingsManager.shared.proxyServer
-        
-        // Use custom session config for proxy if set
         let session: URLSession
         if !proxy.isEmpty {
              let config = URLSessionConfiguration.default
@@ -180,7 +197,7 @@ struct AIHelper {
         }
         
         do {
-            request.httpBody = try JSONEncoder().encode(body)
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
         } catch {
             completion(.failure(error))
             return
@@ -198,17 +215,21 @@ struct AIHelper {
             }
             
             do {
-                // Check for API errors (Ollama returns JSON error sometimes)
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let err = json["error"] as? String {
-                     completion(.failure(NSError(domain: "OCRShot", code: 500, userInfo: [NSLocalizedDescriptionKey: "Ollama Error: \(err)"])))
-                     return
+                if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    if let err = json["error"] as? String {
+                         completion(.failure(NSError(domain: "OCRShot", code: 500, userInfo: [NSLocalizedDescriptionKey: "Ollama Error: \(err)"])))
+                         return
+                    }
+                    
+                    if let message = json["message"] as? [String: Any],
+                       let content = message["content"] as? String {
+                        completion(.success(content.trimmingCharacters(in: .whitespacesAndNewlines)))
+                    } else {
+                        completion(.failure(NSError(domain: "OCRShot", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid response format"])))
+                    }
+                } else {
+                     completion(.failure(NSError(domain: "OCRShot", code: 500, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON"])))
                 }
-
-                let decoded = try JSONDecoder().decode(OllamaResponse.self, from: data)
-                completion(.success(decoded.response))
-            } catch {
-                completion(.failure(error))
             }
         }.resume()
     }

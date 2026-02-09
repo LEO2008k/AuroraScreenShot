@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct DrawingShape {
-    enum ShapeType { case freestyle, line, arrow, rect, strokeRect }
+    enum ShapeType { case freestyle, line, arrow, rect, strokeRect, blurRect }
     var type: ShapeType
     var points: [CGPoint]       // used for freestyle
     var start: CGPoint          // used for line, arrow, rect
@@ -36,7 +36,7 @@ struct OverlayView: View {
     // Custom Tooltip State
     @State private var activeTooltip: String = ""
     
-    enum ToolMode { case selection, draw, line, arrow, redact, highlight, pipette }
+    enum ToolMode { case selection, draw, line, arrow, redact, highlight, pipette, magnify, blur }
     enum ResizeHandle { case topLeft, topRight, bottomLeft, bottomRight, top, bottom, left, right, none }
     
     // Resize State
@@ -65,6 +65,10 @@ struct OverlayView: View {
     @State private var isAIThinking: Bool = false
     @State private var aiPanelOffset: CGSize = .zero // For dragging
     @FocusState private var isInputFocused: Bool // For keyboard focus
+    
+    // Magnify Tool State - NEW: Rectangle-based magnification
+    @State private var magnifyRect: CGRect = .zero // User-drawn magnification zone
+    @State private var magnifyZoomFactor: CGFloat = SettingsManager.shared.magnifierZoomFactor // 1.5x, 2x, 4x
     
     var body: some View {
         GeometryReader { geometry in
@@ -113,6 +117,27 @@ struct OverlayView: View {
                     if let current = currentDrawing {
                         drawShape(current)
                     }
+                    
+                    // Quality Preview - Show blur on selection to preview saved quality
+                    if selectionRect != .zero {
+                        let quality = SettingsManager.shared.quality
+                        let blurRadius: CGFloat = {
+                            switch quality {
+                            case .minimum: return 1.5 // More blur (JPEG 0.6 + downscale preview)
+                            case .medium: return 0.5  // Slight blur (JPEG 0.85 preview)
+                            case .maximum: return 0   // No blur (PNG lossless)
+                            }
+                        }()
+                        
+                        if blurRadius > 0 {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.0001)) // Nearly invisible
+                                .frame(width: selectionRect.width, height: selectionRect.height)
+                                .position(x: selectionRect.midX, y: selectionRect.midY)
+                                .blur(radius: blurRadius)
+                                .allowsHitTesting(false)
+                        }
+                    }
                 }
                 .clipShape(Rectangle().path(in: selectionRect != .zero ? selectionRect : CGRect(origin: .zero, size: geometry.size)))
                 
@@ -146,6 +171,34 @@ struct OverlayView: View {
                         } else {
                             toolsBar(geometry: geometry)
                         }
+                        
+                        // Magnify Tool - NEW: Show magnified rectangle
+                        if viewModel.toolMode == .magnify && magnifyRect != .zero && selectionRect != .zero {
+                            // Render magnified version of the specified region
+                            Image(decorative: image, scale: 1.0)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                                .scaleEffect(magnifyZoomFactor, anchor: .topLeading)
+                                .offset(
+                                    x: -magnifyRect.minX * (magnifyZoomFactor - 1),
+                                y: -magnifyRect.minY * (magnifyZoomFactor - 1)
+                                )
+                                .clipShape(Rectangle().path(in: CGRect(
+                                    x: magnifyRect.minX,
+                                    y: magnifyRect.minY,
+                                    width: magnifyRect.width * magnifyZoomFactor,
+                                    height: magnifyRect.height * magnifyZoomFactor
+                                )))
+                                .allowsHitTesting(false)
+                            
+                            // Draw border around magnify zone
+                            Rectangle()
+                                .stroke(Color.cyan, style: StrokeStyle(lineWidth: 2, dash: [5, 3]))
+                                .frame(width: magnifyRect.width, height: magnifyRect.height)
+                                .position(x: magnifyRect.midX, y: magnifyRect.midY)
+                                .allowsHitTesting(false)
+                        }
                     }
                     // Quick OCR and Translation Mode: show only selection, no toolbars
                 }
@@ -156,6 +209,28 @@ struct OverlayView: View {
             .onAppear {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     NSApp.keyWindow?.makeFirstResponder(nil)
+                }
+                
+                // Monitor scroll events for Option+scroll to cycle zoom factor
+                NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
+                    // Only handle when Magnify tool is active and Option is pressed
+                    if viewModel.toolMode == .magnify && event.modifierFlags.contains(.option) {
+                        let delta = event.scrollingDeltaY
+                        // Cycle zoom levels: 1.5x → 2.0x → 4.0x
+                        if delta > 0 {
+                            // Scroll up: increase zoom
+                            if magnifyZoomFactor < 2.0 { magnifyZoomFactor = 2.0 }
+                            else if magnifyZoomFactor < 4.0 { magnifyZoomFactor = 4.0 }
+                        } else if delta < 0 {
+                            // Scroll down: decrease zoom
+                            if magnifyZoomFactor > 2.0 { magnifyZoomFactor = 2.0 }
+                            else if magnifyZoomFactor > 1.5 { magnifyZoomFactor = 1.5 }
+                        }
+                        // Save to settings
+                        SettingsManager.shared.magnifierZoomFactor = magnifyZoomFactor
+                        return nil // Consume event
+                    }
+                    return event // Pass through
                 }
             }
             .onDisappear {
@@ -190,13 +265,29 @@ struct OverlayView: View {
             } else {
                 updateSelection(to: point)
             }
+        } else if viewModel.toolMode == .magnify {
+            // Magnify Tool: Draw magnification rectangle
+            if startPoint == nil {
+                startPoint = value.startLocation
+                magnifyRect = CGRect(origin: value.startLocation, size: .zero)
+            } else {
+                let origin = CGPoint(
+                    x: min(startPoint!.x, point.x),
+                    y: min(startPoint!.y, point.y)
+                )
+                let size = CGSize(
+                    width: abs(point.x - startPoint!.x),
+                    height: abs(point.y - startPoint!.y)
+                )
+                magnifyRect = CGRect(origin: origin, size: size)
+            }
         } else if viewModel.toolMode == .draw {
              if currentDrawing == nil {
                  currentDrawing = DrawingShape(type: .freestyle, points: [point], start: .zero, end: .zero, color: viewModel.selectedColor, lineWidth: viewModel.strokeWidth)
             } else {
                 currentDrawing?.points.append(point)
             }
-        } else if [.line, .arrow, .redact, .highlight].contains(viewModel.toolMode) {
+        } else if [.line, .arrow, .redact, .highlight, .blur].contains(viewModel.toolMode) {
             if startPoint == nil { startPoint = value.startLocation }
             let start = startPoint!
             
@@ -206,10 +297,11 @@ struct OverlayView: View {
                 case .arrow: type = .arrow
                 case .redact: type = .rect
                 case .highlight: type = .strokeRect
+                case .blur: type = .blurRect // Blur tool uses special blur rectangle
                 default: type = .freestyle
             }
             
-            currentDrawing = DrawingShape(type: type, points: [], start: start, end: point, color: viewModel.selectedColor, lineWidth: (viewModel.toolMode == .redact || viewModel.toolMode == .highlight) ? viewModel.strokeWidth : viewModel.strokeWidth)
+            currentDrawing = DrawingShape(type: type, points: [], start: start, end: point, color: viewModel.selectedColor, lineWidth: (viewModel.toolMode == .redact || viewModel.toolMode == .highlight || viewModel.toolMode == .blur) ? viewModel.strokeWidth : viewModel.strokeWidth)
         }
     }
     
@@ -379,7 +471,21 @@ struct OverlayView: View {
              
              // Pipette
              ActionIconBtn(icon: "eyedropper", label: "Pipette", isActive: viewModel.toolMode == .pipette, hoverText: "Pick Color", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .pipette ? .selection : .pipette }
-                          if [.draw, .line, .arrow, .redact, .highlight, .pipette].contains(viewModel.toolMode) {
+              
+              // Magnifier Tool (macOS 14+ only - requires hover tracking)
+              if SettingsManager.shared.showMagnifierTool {
+                  if #available(macOS 14.0, *) {
+                      ActionIconBtn(icon: "plus.magnifyingglass", label: "Magnify (Beta)", isActive: viewModel.toolMode == .magnify, hoverText: "Zoom In (Requires macOS 14+)", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .magnify ? .selection : .magnify }
+                  }
+                  // On macOS < 14, button is hidden (feature not available)
+              }
+             
+             // Blur Tool (conditional)
+             if SettingsManager.shared.showPrivacyTool {
+                 ActionIconBtn(icon: "drop.fill", label: "Blur", isActive: viewModel.toolMode == .blur, hoverText: "Blur/Pixelate Sensitive Info", activeTooltip: $activeTooltip) { viewModel.toolMode = viewModel.toolMode == .blur ? .selection : .blur }
+             }
+             
+                          if [.draw, .line, .arrow, .redact, .highlight, .pipette, .magnify, .blur].contains(viewModel.toolMode) {
                  Divider().frame(width: 20)
                  
                  // Current Color Preview (Large)
@@ -415,15 +521,39 @@ struct OverlayView: View {
     }
     
     @ViewBuilder func toolSettings() -> some View {
-         HStack(spacing: 4) {
-              Button(action: { viewModel.strokeWidth = max(1, viewModel.strokeWidth - 1) }) { Image(systemName: "minus.circle") }.buttonStyle(.plain)
-              Text("\(Int(viewModel.strokeWidth))").font(.system(size: 12)).frame(width: 20)
-              Button(action: { viewModel.strokeWidth = min(50, viewModel.strokeWidth + 1) }) { Image(systemName: "plus.circle") }.buttonStyle(.plain)
-         }.padding(4).background(Color.secondary.opacity(0.1)).cornerRadius(4)
-         Button(action: { if !viewModel.drawings.isEmpty { viewModel.drawings.removeLast() } }) { Image(systemName: "arrow.uturn.backward") }.buttonStyle(.plain)
+        // Show different controls based on active tool
+        if viewModel.toolMode == .magnify {
+            // Magnifier Size Controls
+            HStack(spacing: 4) {
+                Image(systemName: "magnifyingglass.circle").font(.system(size: 16))
+                Button(action: {
+                    // Cycle down: 4x → 2x → 1.5x
+                    if magnifyZoomFactor > 2.0 { magnifyZoomFactor = 2.0 }
+                    else if magnifyZoomFactor > 1.5 { magnifyZoomFactor = 1.5 }
+else { magnifyZoomFactor = 4.0 } // Wrap around
+                    SettingsManager.shared.magnifierZoomFactor = magnifyZoomFactor
+                }) { Image(systemName: "minus.circle") }.buttonStyle(.plain)
+                Text(String(format: "%.1fx", magnifyZoomFactor)).font(.system(size: 12)).frame(width: 40)
+                Button(action: {
+                    // Cycle up: 1.5x → 2x → 4x
+                    if magnifyZoomFactor < 2.0 { magnifyZoomFactor = 2.0 }
+                    else if magnifyZoomFactor < 4.0 { magnifyZoomFactor = 4.0 }
+                    else { magnifyZoomFactor = 1.5 } // Wrap around
+                    SettingsManager.shared.magnifierZoomFactor = magnifyZoomFactor
+                }) { Image(systemName: "plus.circle") }.buttonStyle(.plain)
+            }.padding(4).background(Color.secondary.opacity(0.1)).cornerRadius(4)
+        } else {
+            // Standard stroke width controls
+            HStack(spacing: 4) {
+                Button(action: { viewModel.strokeWidth = max(1, viewModel.strokeWidth - 1) }) { Image(systemName: "minus.circle") }.buttonStyle(.plain)
+                Text("\(Int(viewModel.strokeWidth))").font(.system(size: 12)).frame(width: 20)
+                Button(action: { viewModel.strokeWidth = min(50, viewModel.strokeWidth + 1) }) { Image(systemName: "plus.circle") }.buttonStyle(.plain)
+            }.padding(4).background(Color.secondary.opacity(0.1)).cornerRadius(4)
+        }
+        Button(action: { if !viewModel.drawings.isEmpty { viewModel.drawings.removeLast() } }) { Image(systemName: "arrow.uturn.backward") }.buttonStyle(.plain)
     }
 
-    func drawShape(_ shape: DrawingShape) -> some View {
+     func drawShape(_ shape: DrawingShape) -> some View {
         Group {
              if shape.type == .freestyle {
                  Path { p in p.addLines(shape.points) }
@@ -441,6 +571,20 @@ struct OverlayView: View {
               } else if shape.type == .strokeRect {
                   let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
                   Rectangle().stroke(shape.color, lineWidth: shape.lineWidth).frame(width: r.width, height: r.height).position(x: r.midX, y: r.midY)
+              } else if shape.type == .blurRect {
+                  // Real Blur Effect (Strong - 76% intensity ≈ radius 30)
+                  let r = CGRect(x: min(shape.start.x, shape.end.x), y: min(shape.start.y, shape.end.y), width: abs(shape.start.x-shape.end.x), height: abs(shape.start.y-shape.end.y))
+                  
+                  // Blurred image section
+                  Image(decorative: image, scale: 1.0)
+                      .resizable()
+                      .aspectRatio(contentMode: .fit)
+                      .blur(radius: 30) // Strong blur (76% intensity)
+                      .mask(
+                          Rectangle()
+                              .frame(width: r.width, height: r.height)
+                              .position(x: r.midX, y: r.midY)
+                      )
               }
         }
     }
@@ -662,19 +806,46 @@ struct OverlayView: View {
         guard let final = imageToSave else { return }
         
         let rep = NSBitmapImageRep(cgImage: final)
-        guard let pngData = rep.representation(using: .png, properties: [:]) else { return }
+        
+        // Quality-based compression
+        let quality = SettingsManager.shared.quality
+        let imageData: Data?
+        let fileExtension: String
+        
+        switch quality {
+        case .minimum:
+            // JPEG with 0.6 compression for < 1MB files
+            imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.6])
+            fileExtension = "jpg"
+        case .medium:
+            // Balanced: JPEG with 0.85 compression
+            imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.85])
+            fileExtension = "jpg"
+        case .maximum:
+            // Lossless PNG for best quality
+            imageData = rep.representation(using: .png, properties: [:])
+            fileExtension = "png"
+        }
+        
+        guard let finalData = imageData else { return }
         
         let savePanel = NSSavePanel()
-        savePanel.allowedContentTypes = [.png, .jpeg]
+        // Only allow the correct file type for the current quality setting
+        switch quality {
+        case .minimum, .medium:
+            savePanel.allowedContentTypes = [.jpeg]
+        case .maximum:
+            savePanel.allowedContentTypes = [.png]
+        }
         savePanel.canCreateDirectories = true
-        savePanel.nameFieldStringValue = "Screenshot_\(Int(Date().timeIntervalSince1970))"
+        savePanel.nameFieldStringValue = "Screenshot_\(Int(Date().timeIntervalSince1970)).\(fileExtension)"
         savePanel.directoryURL = SettingsManager.shared.saveDirectory
         
         onClose()
         DispatchQueue.main.asyncAfter(deadline: .now()+0.1) {
             savePanel.begin { response in
                 if response == .OK, let url = savePanel.url {
-                    try? pngData.write(to: url)
+                    try? finalData.write(to: url)
                 }
             }
         }
@@ -999,3 +1170,4 @@ struct ActionIconBtn: View {
         }.buttonStyle(.plain).onHover { h in isHovering=h; activeTooltip=h ? hoverText : "" }
     }
 }
+

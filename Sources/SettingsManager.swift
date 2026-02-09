@@ -129,6 +129,37 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kAuroraIntensity) }
     }
     
+    // Tool Visibility Settings
+    private let kShowMagnifierTool = "ShowMagnifierTool"
+    private let kShowPrivacyTool = "ShowPrivacyTool"
+    private let kPrivacyMode = "PrivacyMode" // "pixelate" or "solid"
+    
+    var showMagnifierTool: Bool {
+        get { UserDefaults.standard.object(forKey: kShowMagnifierTool) as? Bool ?? true } // Default: visible
+        set { UserDefaults.standard.set(newValue, forKey: kShowMagnifierTool) }
+    }
+    
+    var showPrivacyTool: Bool {
+        get { UserDefaults.standard.object(forKey: kShowPrivacyTool) as? Bool ?? true } // Default: visible
+        set { UserDefaults.standard.set(newValue, forKey: kShowPrivacyTool) }
+    }
+    
+    var privacyMode: String {
+        get { UserDefaults.standard.string(forKey: kPrivacyMode) ?? "pixelate" } // Default: pixelate effect
+        set { UserDefaults.standard.set(newValue, forKey: kPrivacyMode) }
+    }
+    
+    // Magnifier Tool Settings
+    private let kMagnifierZoomFactor = "MagnifierZoomFactor"
+    
+    var magnifierZoomFactor: CGFloat {
+        get { 
+            let val = UserDefaults.standard.double(forKey: kMagnifierZoomFactor)
+            return val == 0 ? 2.0 : CGFloat(val) // Default: 2.0x zoom
+        }
+        set { UserDefaults.standard.set(Double(newValue), forKey: kMagnifierZoomFactor) }
+    }
+    
     // MARK: - HotKey Helpers
     func getHotKey(key: String) -> (Int, UInt, Bool) {
         let code = UserDefaults.standard.integer(forKey: "\(key)_keyCode")
@@ -397,7 +428,7 @@ class SettingsManager {
                 let oldDownscale = UserDefaults.standard.bool(forKey: "DownscaleRetina")
                 return oldDownscale ? CaptureQuality.medium.rawValue : CaptureQuality.maximum.rawValue
             }
-            return UserDefaults.standard.string(forKey: kCaptureQuality) ?? CaptureQuality.medium.rawValue
+            return UserDefaults.standard.string(forKey: kCaptureQuality) ?? CaptureQuality.minimum.rawValue // CHANGED: minimum is now default
         }
         set { UserDefaults.standard.set(newValue, forKey: kCaptureQuality) }
     }
@@ -526,6 +557,15 @@ class SettingsManager {
             if response == .OK, let url = openPanel.url {
                 self.saveDirectory = url
             }
+        }
+    }
+    
+    // MARK: - Factory Reset
+    func resetToDefaults() {
+        if let bundleID = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleID)
+            UserDefaults.standard.synchronize()
+            print("Settings reset to defaults.")
         }
     }
 }

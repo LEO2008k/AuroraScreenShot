@@ -401,6 +401,18 @@ struct GeneralSettingsView: View {
                      .onChange(of: showTranslateButton) { newValue in
                          SettingsManager.shared.showTranslateButton = newValue
                      }
+                 
+                 Toggle("Show Magnifier Tool", isOn: Binding(
+                     get: { SettingsManager.shared.showMagnifierTool },
+                     set: { SettingsManager.shared.showMagnifierTool = $0 }
+                 ))
+                     .help("Show the Magnifier (zoom) tool in the toolbar")
+                 
+                 Toggle("Show Blur Tool", isOn: Binding(
+                     get: { SettingsManager.shared.showPrivacyTool },
+                     set: { SettingsManager.shared.showPrivacyTool = $0 }
+                 ))
+                     .help("Show the Blur (pixelate) tool in the toolbar")
             }
             
             Section(header: Text("Save Location")) {
@@ -504,7 +516,6 @@ struct GeneralSettingsView: View {
                     }
                 }
                 
-                // Low RAM warning
                 if !canUseMax {
                     HStack(alignment: .top, spacing: 4) {
                         Image(systemName: "exclamationmark.triangle.fill")
@@ -516,6 +527,32 @@ struct GeneralSettingsView: View {
                     }
                 }
             }
+            
+            Section(header: Text("Troubleshooting")) {
+                 Button(role: .destructive) {
+                     showResetAlert = true
+                 } label: {
+                     HStack {
+                         Image(systemName: "trash")
+                         Text("Reset to Factory Defaults")
+                     }
+                     .frame(maxWidth: .infinity)
+                 }
+                 .alert(isPresented: $showResetAlert) {
+                     Alert(
+                         title: Text("Factory Reset"),
+                         message: Text("Are you sure you want to reset all settings? This action cannot be undone and will relaunch the app."),
+                         primaryButton: .destructive(Text("Reset")) {
+                             SettingsManager.shared.resetToDefaults()
+                             // Relaunch app to apply changes cleanly
+                             let url = URL(fileURLWithPath: Bundle.main.bundlePath)
+                             NSWorkspace.shared.open(url)
+                             NSApp.terminate(nil)
+                         },
+                         secondaryButton: .cancel()
+                     )
+                 }
+            }
         }
         .padding()
         .onAppear {
@@ -524,6 +561,8 @@ struct GeneralSettingsView: View {
             captureQuality = SettingsManager.shared.captureQuality
         }
     }
+    
+    @State private var showResetAlert = false
     
     private func showLowRAMAlert() {
         let alert = NSAlert()

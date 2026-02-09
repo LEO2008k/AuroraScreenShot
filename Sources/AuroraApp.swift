@@ -87,18 +87,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         item.keyEquivalentModifierMask = shortcut.nsModifierFlags
         menu.addItem(item)
         
-        // Quick OCR Menu Item
-        let ocrShortcut = SettingsManager.shared.ocrShortcut
-        let ocrItem = NSMenuItem(title: "Quick OCR", action: #selector(captureOCR), keyEquivalent: KeyboardShortcuts.keyString(for: ocrShortcut.keyCode))
-        ocrItem.keyEquivalentModifierMask = ocrShortcut.nsModifierFlags
-        ocrItem.keyEquivalentModifierMask = ocrShortcut.nsModifierFlags
-        menu.addItem(ocrItem)
-        
         // Screenshot & Translate Menu Item
         let transShortcut = SettingsManager.shared.translationHotKey
         let transItem = NSMenuItem(title: "Screenshot & Translate", action: #selector(captureTranslation), keyEquivalent: KeyboardShortcuts.keyString(for: UInt16(transShortcut.0)))
         transItem.keyEquivalentModifierMask = NSEvent.ModifierFlags(rawValue: transShortcut.1)
         menu.addItem(transItem)
+        
+        // Quick OCR Menu Item
+        let ocrShortcut = SettingsManager.shared.ocrShortcut
+        let ocrItem = NSMenuItem(title: "Quick OCR", action: #selector(captureOCR), keyEquivalent: KeyboardShortcuts.keyString(for: ocrShortcut.keyCode))
+        ocrItem.keyEquivalentModifierMask = ocrShortcut.nsModifierFlags
+        menu.addItem(ocrItem)
         
         menu.addItem(NSMenuItem.separator())
         // Preferences with dynamic shortcut
