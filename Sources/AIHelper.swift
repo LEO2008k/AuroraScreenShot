@@ -180,7 +180,7 @@ struct AIHelper {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 60 // Longer timeout for image analysis
+        request.timeoutInterval = 180 // Increased timeout for long text/images
         
         // Check Proxy
         let proxy = SettingsManager.shared.proxyServer
@@ -276,7 +276,7 @@ struct AIHelper {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 60
+        request.timeoutInterval = 180
         
         let session = URLSession.shared
         
