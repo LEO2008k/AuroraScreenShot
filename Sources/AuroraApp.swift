@@ -210,6 +210,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // Explicit cleanup helper
     func cleanupOverlay() {
+        if let oc = overlayController {
+            oc.viewModel.reset() // Clear drawings and state
+            oc.closeOverlay()
+        }
         overlayController = nil
     }
     
@@ -274,6 +278,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 
                 // Restore menu bar icon
                 self.statusItem.button?.isHidden = false
+                
+                // MEMORY FIX: Ensure previous overlay is fully released before creating new one
+                if self.overlayController != nil {
+                    self.cleanupOverlay()
+                }
                 
                 // Show overlay with captured image on the correct screen
                 self.overlayController = OverlayController(image: result.image, screen: result.screen, isQuickOCR: ocrOnly, isTranslationMode: isTranslationMode)

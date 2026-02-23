@@ -70,6 +70,12 @@ struct OverlayView: View {
     @State private var magnifyRect: CGRect = .zero // User-drawn magnification zone
     @State private var magnifyZoomFactor: CGFloat = SettingsManager.shared.magnifierZoomFactor // 1.5x, 2x, 4x
     
+    // MEMORY: Event monitor reference for cleanup
+    @State private var scrollMonitor: Any? = nil
+    
+    // MEMORY: Cached bitmap for pipette color picking (avoid re-creating per drag event)
+    @State private var cachedBitmapRep: NSBitmapImageRep? = nil
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -211,8 +217,8 @@ struct OverlayView: View {
                     NSApp.keyWindow?.makeFirstResponder(nil)
                 }
                 
-                // Monitor scroll events for Option+scroll to cycle zoom factor
-                NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { event in
+                // MEMORY FIX: Store monitor reference so we can remove it later
+                scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [self] event in
                     // Only handle when Magnify tool is active and Option is pressed
                     if viewModel.toolMode == .magnify && event.modifierFlags.contains(.option) {
                         let delta = event.scrollingDeltaY
@@ -234,8 +240,20 @@ struct OverlayView: View {
                 }
             }
             .onDisappear {
+                // MEMORY FIX: Remove scroll event monitor to break retain cycle
+                if let monitor = scrollMonitor {
+                    NSEvent.removeMonitor(monitor)
+                    scrollMonitor = nil
+                }
+                
                 // Explicit cleanup to help release memory
                 viewModel.drawings.removeAll()
+                cachedBitmapRep = nil
+                magnifyRect = .zero
+                selectionRect = .zero
+                currentDrawing = nil
+                aiResponse = ""
+                aiQuery = ""
             }
             // IMPORTANT: Gesture removed from here and moved to 'Gesture Layer' inside ZStack
         }
@@ -446,8 +464,11 @@ struct OverlayView: View {
         let imagePointY = (point.y - offsetY) / scale
         
         if imagePointX >= 0 && imagePointX < imageWidth && imagePointY >= 0 && imagePointY < imageHeight {
-            let bitmap = NSBitmapImageRep(cgImage: image)
-            if let color = bitmap.colorAt(x: Int(imagePointX), y: Int(imagePointY)) {
+            // MEMORY FIX: Cache NSBitmapImageRep instead of creating a new one per drag event
+            if cachedBitmapRep == nil {
+                cachedBitmapRep = NSBitmapImageRep(cgImage: image)
+            }
+            if let color = cachedBitmapRep?.colorAt(x: Int(imagePointX), y: Int(imagePointY)) {
                 viewModel.selectedColor = Color(color)
             }
         }
@@ -890,7 +911,10 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
         guard let cropped = getCroppedImage(geometry: geometry) else { return }
         let ocrText = AIHelper.shared.recognizeText(from: cropped) // Now works!
         
-        if let windowController = (NSApp.delegate as? AppDelegate)?.resultWindowController { windowController.close() }
+        if let windowController = (NSApp.delegate as? AppDelegate)?.resultWindowController {
+            windowController.close()
+            (NSApp.delegate as? AppDelegate)?.resultWindowController = nil
+        }
         
         // Quick OCR: manual translation (autoTranslate: false)
         let resultVC = OCRResultWindowController(text: ocrText, autoTranslate: false)
@@ -912,7 +936,10 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
         onClose()
         
         // 2. Open Result Window with Placeholder
-        if let windowController = (NSApp.delegate as? AppDelegate)?.resultWindowController { windowController.close() }
+        if let windowController = (NSApp.delegate as? AppDelegate)?.resultWindowController {
+            windowController.close()
+            (NSApp.delegate as? AppDelegate)?.resultWindowController = nil
+        }
         
         let resultVC = OCRResultWindowController(text: "Translating...\n\n(Original: \(ocrText.prefix(50))...)")
         (NSApp.delegate as? AppDelegate)?.resultWindowController = resultVC
