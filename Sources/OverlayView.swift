@@ -808,6 +808,9 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
             let pasteboard = NSPasteboard.general
             pasteboard.clearContents()
             pasteboard.setData(pngData, forType: .png)
+            
+            // MEMORY: Schedule auto-cleanup of clipboard after 5 minutes
+            ClipboardManager.shared.scheduleClipboardCleanup()
         }
         onClose()
     }

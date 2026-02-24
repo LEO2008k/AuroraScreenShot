@@ -2,6 +2,56 @@
 import Cocoa
 import SwiftUI
 
+// MARK: - Clipboard Auto-Cleanup Manager
+class ClipboardManager {
+    static let shared = ClipboardManager()
+    
+    private var cleanupTimer: Timer?
+    private var pasteboardChangeCount: Int = 0
+    
+    /// Clipboard auto-clear delay in seconds (5 minutes)
+    private let clipboardTimeout: TimeInterval = 5 * 60
+    
+    private init() {}
+    
+    /// Call after copying screenshot to clipboard. Starts a 5-minute timer to auto-clear.
+    func scheduleClipboardCleanup() {
+        // Cancel any existing timer
+        cleanupTimer?.invalidate()
+        
+        // Record current pasteboard state
+        pasteboardChangeCount = NSPasteboard.general.changeCount
+        
+        print("📋 Clipboard cleanup scheduled in \(Int(clipboardTimeout))s (changeCount: \(pasteboardChangeCount))")
+        
+        // Schedule cleanup
+        cleanupTimer = Timer.scheduledTimer(withTimeInterval: clipboardTimeout, repeats: false) { [weak self] _ in
+            self?.performClipboardCleanup()
+        }
+    }
+    
+    /// Clears the clipboard if it still contains our screenshot data
+    private func performClipboardCleanup() {
+        let currentChangeCount = NSPasteboard.general.changeCount
+        
+        // Only clear if user hasn't copied something else since we set the clipboard
+        if currentChangeCount == pasteboardChangeCount {
+            NSPasteboard.general.clearContents()
+            print("🧹 Clipboard auto-cleared after \(Int(clipboardTimeout))s timeout")
+        } else {
+            print("📋 Clipboard changed by user (\(pasteboardChangeCount) → \(currentChangeCount)), skipping cleanup")
+        }
+        
+        cleanupTimer = nil
+    }
+    
+    /// Cancel scheduled cleanup (e.g., on app quit)
+    func cancelCleanup() {
+        cleanupTimer?.invalidate()
+        cleanupTimer = nil
+    }
+}
+
 @main
 struct AuroraApp {
     static func main() {
