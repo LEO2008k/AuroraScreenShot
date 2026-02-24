@@ -1014,7 +1014,7 @@ struct AboutSettingsView: View {
 
     func checkForUpdates(silent: Bool = false) {
         // Hardcoded URL for official updates
-        let urlStr = "https://raw.githubusercontent.com/LEO2008k/AuroraScreenShot/new-features/version.txt"
+        let urlStr = "https://raw.githubusercontent.com/LEO2008k/AuroraScreenShot/main/version.txt"
         
         guard let url = URL(string: urlStr) else {
             if !silent {
