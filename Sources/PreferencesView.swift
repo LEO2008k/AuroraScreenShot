@@ -1116,14 +1116,63 @@ struct HistorySettingsView: View {
     @State private var ocrRetentionHours = SettingsManager.shared.ocrHistoryRetentionHours
     @ObservedObject var ocrManager = OCRHistoryManager.shared
     
+    // Clipboard
+    @State private var clipboardTimeout = Double(SettingsManager.shared.clipboardTimeoutMinutes)
+    
     @State private var isCustomMode = false
     @State private var isOCRCustomMode = false
+    
+    // File sizes
+    @State private var translationFileSize: String = "—"
+    @State private var ocrFileSize: String = "—"
     
     // Presets for the picker
     let presets = [3, 6, 12, 24, 48, 120, -1]
     
     var body: some View {
         Form {
+            // ============ CLIPBOARD MEMORY ============
+            Section(header: HStack {
+                Image(systemName: "doc.on.clipboard")
+                Text("Clipboard Memory")
+            }) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Auto-clear clipboard after copying a screenshot to free RAM.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    HStack {
+                        Image(systemName: "timer")
+                            .foregroundColor(.blue)
+                        Text("Clear after:")
+                        
+                        Slider(value: $clipboardTimeout, in: 1...60, step: 1)
+                            .onChange(of: clipboardTimeout) { newValue in
+                                SettingsManager.shared.clipboardTimeoutMinutes = Int(newValue)
+                            }
+                        
+                        Text("\(Int(clipboardTimeout)) min")
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .frame(width: 55, alignment: .trailing)
+                    }
+                    
+                    HStack(spacing: 16) {
+                        ForEach([1, 3, 5, 15, 30, 60], id: \.self) { mins in
+                            Button("\(mins) min") {
+                                clipboardTimeout = Double(mins)
+                                SettingsManager.shared.clipboardTimeoutMinutes = mins
+                            }
+                            .buttonStyle(.plain)
+                            .font(.caption)
+                            .foregroundColor(Int(clipboardTimeout) == mins ? .accentColor : .secondary)
+                        }
+                    }
+                }
+            }
+            
+            Divider()
+                .padding(.vertical, 8)
+            
             // ============ TRANSLATION HISTORY ============
             Section(header: HStack {
                 Image(systemName: "globe")
@@ -1144,12 +1193,19 @@ struct HistorySettingsView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                // File Location
+                // File Location + Size
                 if let url = translationManager.historyFileURL {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Storage Path:")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                        HStack {
+                            Text("Storage Path:")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("📦 \(translationFileSize)")
+                                .font(.caption2)
+                                .foregroundColor(.orange)
+                                .fontWeight(.medium)
+                        }
                         HStack {
                             Image(systemName: "internaldrive")
                             Text(url.path)
@@ -1245,6 +1301,7 @@ struct HistorySettingsView: View {
                     
                     Button(action: {
                         HistoryManager.shared.clearAll()
+                        refreshFileSizes()
                     }) {
                         Label("Clear All Translation History", systemImage: "trash")
                             .foregroundColor(.red)
@@ -1275,12 +1332,19 @@ struct HistorySettingsView: View {
                         .foregroundColor(.secondary)
                 }
                 
-                // File Location
+                // File Location + Size
                 if let url = ocrManager.historyFileURL {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Storage Path:")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                        HStack {
+                            Text("Storage Path:")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("📦 \(ocrFileSize)")
+                                .font(.caption2)
+                                .foregroundColor(.orange)
+                                .fontWeight(.medium)
+                        }
                         HStack {
                             Image(systemName: "internaldrive")
                             Text(url.path)
@@ -1375,6 +1439,7 @@ struct HistorySettingsView: View {
                     
                     Button(action: {
                         OCRHistoryManager.shared.clearAll()
+                        refreshFileSizes()
                     }) {
                         Label("Clear All OCR History", systemImage: "trash")
                             .foregroundColor(.red)
@@ -1388,6 +1453,7 @@ struct HistorySettingsView: View {
             retentionHours = SettingsManager.shared.historyRetentionHours
             saveOCRHistory = SettingsManager.shared.saveOCRHistory
             ocrRetentionHours = SettingsManager.shared.ocrHistoryRetentionHours
+            clipboardTimeout = Double(SettingsManager.shared.clipboardTimeoutMinutes)
             
             if !presets.contains(retentionHours) {
                 isCustomMode = true
@@ -1395,11 +1461,34 @@ struct HistorySettingsView: View {
             if !presets.contains(ocrRetentionHours) {
                 isOCRCustomMode = true
             }
+            
+            refreshFileSizes()
         }
     }
+    
+    // MARK: - File Size Helper
+    private func refreshFileSizes() {
+        translationFileSize = fileSizeString(for: translationManager.historyFileURL)
+        ocrFileSize = fileSizeString(for: ocrManager.historyFileURL)
+    }
+    
+    private func fileSizeString(for url: URL?) -> String {
+        guard let url = url else { return "—" }
+        do {
+            let attrs = try FileManager.default.attributesOfItem(atPath: url.path)
+            if let bytes = attrs[.size] as? Int64 {
+                let mb = Double(bytes) / (1024.0 * 1024.0)
+                if mb >= 1.0 {
+                    return String(format: "%.1f MB", mb)
+                } else if bytes > 0 {
+                    return String(format: "%.1f KB", Double(bytes) / 1024.0)
+                } else {
+                    return "0 KB"
+                }
+            }
+        } catch {
+            // File doesn't exist yet
+        }
+        return "0 KB"
+    }
 }
-
-
-
-
-

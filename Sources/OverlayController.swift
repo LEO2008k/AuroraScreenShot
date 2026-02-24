@@ -86,33 +86,48 @@ class OverlayController: NSWindowController {
     func closeOverlay() {
         print("Closing overlay...")
         
-        // Remove event monitor first
+        // 1. Remove event monitor
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
             eventMonitor = nil
         }
         
-        // Break potential strong reference cycles in SwiftUI hosting
-        // This is critical to release the heavy CGImage held by OverlayView
-        window?.contentView = nil
+        // 2. Remove notification observer to break retain cycle
+        NotificationCenter.default.removeObserver(self)
         
-        // Close and release window
-        window?.orderOut(nil)
-        window?.close()
+        // 3. Reset ViewModel to release drawings data
+        viewModel.reset()
         
-        // Clear reference in app delegate
+        // 4. Break SwiftUI hosting view - this releases the CGImage
+        if let w = window {
+            w.contentView = nil
+            w.orderOut(nil)
+            w.close()
+        }
+        
+        // 5. Clear reference in app delegate
         if let appDelegate = NSApp.delegate as? AppDelegate {
             appDelegate.overlayController = nil
+        }
+        
+        // 6. Hint system to reclaim memory after a short delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            autoreleasepool {
+                // Force pending autorelease pool drain
+            }
+            print("🧹 Memory cleanup hint sent")
         }
         
         print("Overlay closed")
     }
     
     deinit {
-        print("OverlayController deinit")
+        print("OverlayController deinit - freeing memory")
+        NotificationCenter.default.removeObserver(self)
         if let monitor = eventMonitor {
             NSEvent.removeMonitor(monitor)
         }
+        window?.contentView = nil
         window?.close()
     }
 }

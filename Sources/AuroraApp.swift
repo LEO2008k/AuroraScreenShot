@@ -9,12 +9,15 @@ class ClipboardManager {
     private var cleanupTimer: Timer?
     private var pasteboardChangeCount: Int = 0
     
-    /// Clipboard auto-clear delay in seconds (5 minutes)
-    private let clipboardTimeout: TimeInterval = 5 * 60
-    
     private init() {}
     
-    /// Call after copying screenshot to clipboard. Starts a 5-minute timer to auto-clear.
+    /// Clipboard auto-clear delay from user settings (default 3 min, max 60 min)
+    private var clipboardTimeoutSeconds: TimeInterval {
+        let minutes = SettingsManager.shared.clipboardTimeoutMinutes
+        return TimeInterval(max(1, min(minutes, 60))) * 60
+    }
+    
+    /// Call after copying screenshot to clipboard. Starts auto-clear timer.
     func scheduleClipboardCleanup() {
         // Cancel any existing timer
         cleanupTimer?.invalidate()
@@ -22,10 +25,11 @@ class ClipboardManager {
         // Record current pasteboard state
         pasteboardChangeCount = NSPasteboard.general.changeCount
         
-        print("📋 Clipboard cleanup scheduled in \(Int(clipboardTimeout))s (changeCount: \(pasteboardChangeCount))")
+        let timeout = clipboardTimeoutSeconds
+        print("📋 Clipboard cleanup scheduled in \(Int(timeout))s (\(Int(timeout/60)) min)")
         
         // Schedule cleanup
-        cleanupTimer = Timer.scheduledTimer(withTimeInterval: clipboardTimeout, repeats: false) { [weak self] _ in
+        cleanupTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
             self?.performClipboardCleanup()
         }
     }
@@ -37,9 +41,9 @@ class ClipboardManager {
         // Only clear if user hasn't copied something else since we set the clipboard
         if currentChangeCount == pasteboardChangeCount {
             NSPasteboard.general.clearContents()
-            print("🧹 Clipboard auto-cleared after \(Int(clipboardTimeout))s timeout")
+            print("🧹 Clipboard auto-cleared after \(Int(clipboardTimeoutSeconds/60)) min timeout")
         } else {
-            print("📋 Clipboard changed by user (\(pasteboardChangeCount) → \(currentChangeCount)), skipping cleanup")
+            print("📋 Clipboard changed by user, skipping cleanup")
         }
         
         cleanupTimer = nil
@@ -258,13 +262,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     var overlayController: OverlayController?
     
-    // Explicit cleanup helper
+    // Explicit cleanup helper - AGGRESSIVE memory release
     func cleanupOverlay() {
         if let oc = overlayController {
-            oc.viewModel.reset() // Clear drawings and state
+            oc.viewModel.reset()
             oc.closeOverlay()
         }
         overlayController = nil
+        
+        // Force autorelease pool drain on next run loop
+        DispatchQueue.main.async {
+            autoreleasepool {
+                // Drain any pending autoreleased objects (CGImage, NSBitmapImageRep, etc.)
+            }
+        }
     }
     
     var resultWindowController: OCRResultWindowController? // Keep reference to prevent dealloc

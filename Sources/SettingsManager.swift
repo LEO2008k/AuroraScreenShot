@@ -522,6 +522,17 @@ class SettingsManager {
         set { UserDefaults.standard.set(newValue, forKey: kOCRHistoryRetentionHours) }
     }
     
+    // Clipboard Auto-Clear Settings
+    private let kClipboardTimeoutMinutes = "ClipboardTimeoutMinutes"
+    
+    var clipboardTimeoutMinutes: Int {
+        get {
+            let val = UserDefaults.standard.integer(forKey: kClipboardTimeoutMinutes)
+            return val == 0 ? 3 : val // Default 3 minutes, max 60
+        }
+        set { UserDefaults.standard.set(min(newValue, 60), forKey: kClipboardTimeoutMinutes) }
+    }
+    
     // OCR Editor Appearance
     private let kOCRFontSize = "OCRFontSize"
     private let kOCREditorBgMode = "OCREditorBgMode" // "System", "Dark", "Light", "Custom"
