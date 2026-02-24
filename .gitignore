@@ -33,3 +33,19 @@ Package.resolved
 *.tmp
 *.log
 **/.DS_Store
+
+# Agent / AI generated docs
+.agents/
+.agent/
+_agents/
+_agent/
+.gemini/
+idea.md
+ideas.md
+IDEA.md
+TODO.md
+NOTES.md
+PLAN.md
+
+# Ignore misc .md files but keep important ones
+# (README.md and CHANGELOG.md are tracked)
