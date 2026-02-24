@@ -5,6 +5,7 @@ import CoreGraphics
 struct ScreenCapture {
     /// Captures the main screen content as a CGImage.
     /// Captures the screen containing the mouse cursor (including windows)
+    /// MEMORY: Returns a "detached" CGImage copy (not IOSurface-backed) so memory can be freed by ARC
     static func captureActiveScreen() -> (image: CGImage, screen: NSScreen)? {
         let mouseLocation = NSEvent.mouseLocation
         
@@ -66,58 +67,74 @@ struct ScreenCapture {
             print("Using minimum quality (1x nominal) - Low memory")
         }
         
-        // Capture screen
-        guard let rawImage = CGWindowListCreateImage(
-            captureRect,
-            .optionOnScreenOnly,
-            kCGNullWindowID,
-            imageOptions
+        // Capture screen within autoreleasepool to help release transient objects
+        return autoreleasepool {
+            guard let rawImage = CGWindowListCreateImage(
+                captureRect,
+                .optionOnScreenOnly,
+                kCGNullWindowID,
+                imageOptions
+            ) else {
+                print("Error: CGWindowListCreateImage failed")
+                return nil
+            }
+            
+            // Check Memory Limits and Resize if needed
+            let width = rawImage.width
+            let height = rawImage.height
+            let estimatedBytes = width * height * 4 // 4 bytes per pixel (RGBA)
+            let limitBytes = quality.maxMemoryBytes
+            
+            print("Captured size: \(width)x\(height), Est. Memory: \(estimatedBytes / 1024 / 1024) MB, Limit: \(limitBytes / 1024 / 1024) MB")
+            
+            if estimatedBytes > limitBytes {
+                print("⚠️ Memory limit exceeded! Downscaling...")
+                // Calculate scale to fit within limit (area ratio)
+                let scale = sqrt(Double(limitBytes) / Double(estimatedBytes))
+                let newWidth = Int(Double(width) * scale)
+                let newHeight = Int(Double(height) * scale)
+                
+                print("Resizing to: \(newWidth)x\(newHeight) (Scale: \(String(format: "%.2f", scale)))")
+                
+                if let resized = createDetachedCopy(of: rawImage, width: newWidth, height: newHeight) {
+                    return (resized, screen)
+                }
+            }
+            
+            // MEMORY FIX: Create a "detached" copy of the CGImage
+            // CGWindowListCreateImage returns an IOSurface-backed image.
+            // IOSurface memory is mapped into our process and may NOT be freed when the CGImage
+            // reference is released. By copying pixels into a regular CGContext-backed image,
+            // we allow the IOSurface to be unmapped and the memory to be reclaimed by ARC.
+            if let detached = createDetachedCopy(of: rawImage, width: width, height: height) {
+                print("✅ Created detached copy (\(width)x\(height)), IOSurface can be freed")
+                return (detached, screen)
+            }
+            
+            // Fallback: return raw image if copy fails (shouldn't happen)
+            print("⚠️ Could not create detached copy, using IOSurface-backed image")
+            return (rawImage, screen)
+        }
+    }
+    
+    /// Creates a regular bitmap-backed CGImage copy from any source CGImage.
+    /// This ensures the resulting image is NOT backed by IOSurface or other shared memory.
+    private static func createDetachedCopy(of source: CGImage, width: Int, height: Int) -> CGImage? {
+        let colorSpace = source.colorSpace ?? CGColorSpaceCreateDeviceRGB()
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0, // Calculate automatically
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
         ) else {
-            print("Error: CGWindowListCreateImage failed")
             return nil
         }
         
-        // Check Memory Limits and Resize if needed
-        let width = rawImage.width
-        let height = rawImage.height
-        let estimatedBytes = width * height * 4 // 4 bytes per pixel (RGBA)
-        let limitBytes = quality.maxMemoryBytes
-        
-        print("Captured size: \(width)x\(height), Est. Memory: \(estimatedBytes / 1024 / 1024) MB, Limit: \(limitBytes / 1024 / 1024) MB")
-        
-        if estimatedBytes > limitBytes {
-            print("⚠️ Memory limit exceeded! Downscaling...")
-            // Calculate scale to fit within limit (area ratio)
-            let scale = sqrt(Double(limitBytes) / Double(estimatedBytes))
-            let newWidth = Int(Double(width) * scale)
-            let newHeight = Int(Double(height) * scale)
-            
-            print("Resizing to: \(newWidth)x\(newHeight) (Scale: \(String(format: "%.2f", scale)))")
-            
-            // Create context for resizing
-            let colorSpace = rawImage.colorSpace ?? CGColorSpaceCreateDeviceRGB()
-            guard let context = CGContext(
-                data: nil,
-                width: newWidth,
-                height: newHeight,
-                bitsPerComponent: rawImage.bitsPerComponent,
-                bytesPerRow: 0, // Calculate automatically
-                space: colorSpace,
-                bitmapInfo: rawImage.bitmapInfo.rawValue
-            ) else {
-                print("Failed to create resize context, using original")
-                return (rawImage, screen)
-            }
-            
-            // Draw original image into smaller context
-            context.interpolationQuality = .high
-            context.draw(rawImage, in: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
-            
-            if let resizedImage = context.makeImage() {
-                return (resizedImage, screen)
-            }
-        }
-        
-        return (rawImage, screen)
+        context.interpolationQuality = .high
+        context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return context.makeImage()
     }
 }
