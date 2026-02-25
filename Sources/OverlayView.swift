@@ -671,7 +671,8 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
                 .overlay(Circle().stroke(Color.white, lineWidth: 2))
                 .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
                 .position(positions[i])
-        })
+        }
+        .allowsHitTesting(false)) // Let drag gestures pass through to the gesture layer
     }
     
     // Flatten logic
@@ -933,10 +934,12 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
         guard let cropped = getCroppedImage(geometry: geometry) else { return }
         let nsImage = NSImage(cgImage: cropped, size: NSSize(width: cropped.width, height: cropped.height))
         let picker = NSSharingServicePicker(items: [nsImage])
-        if let window = NSApp.keyWindow {
-             picker.show(relativeTo: selectionRect, of: window.contentView!, preferredEdge: .minY)
+        if let window = NSApp.keyWindow, let contentView = window.contentView {
+             // Show the picker relative to the selection area
+             // Note: Do NOT call onClose() here — it destroys the window before the picker can display.
+             // The user can close overlay manually after sharing (ESC or Close button).
+             picker.show(relativeTo: selectionRect, of: contentView, preferredEdge: .minY)
         }
-        onClose()
     }
     
     // MARK: - Features Actions
