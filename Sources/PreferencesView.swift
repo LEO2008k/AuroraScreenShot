@@ -391,6 +391,7 @@ struct GeneralSettingsView: View {
     @State private var path: String = SettingsManager.shared.saveDirectory.path
     @State private var launchAtLogin = SettingsManager.shared.launchAtLogin
     @State private var captureQuality = SettingsManager.shared.captureQuality
+    @State private var saveAsHDR = SettingsManager.shared.saveAsHDR
     @AppStorage("showTranslateButton") private var showTranslateButton = true // Merged
     
     var body: some View {
@@ -528,6 +529,42 @@ struct GeneralSettingsView: View {
                 }
             }
             
+            Section(header: Text("HDR / Wide Color")) {
+                let isMaxQuality = CaptureQuality(rawValue: captureQuality) == .maximum
+                
+                Toggle("Save as HDR", isOn: $saveAsHDR)
+                    .toggleStyle(SwitchToggleStyle(tint: .purple))
+                    .disabled(!isMaxQuality)
+                    .onChange(of: saveAsHDR) { newValue in
+                        SettingsManager.shared.saveAsHDR = newValue
+                    }
+                
+                if isMaxQuality {
+                    HStack(alignment: .top, spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.purple)
+                            .font(.caption)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Captures in 10-bit Deep Color (Display P3)")
+                                .font(.caption)
+                                .foregroundColor(.purple)
+                            Text("Saves as .heic (HEIF) — preserves HDR/Wide Color data. Uses more memory.")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                } else {
+                    HStack(alignment: .top, spacing: 4) {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
+                        Text("HDR requires Maximum quality. Change Capture Quality above to enable.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
             Section(header: Text("Troubleshooting")) {
                  Button(role: .destructive) {
                      showResetAlert = true
@@ -559,6 +596,7 @@ struct GeneralSettingsView: View {
             path = SettingsManager.shared.saveDirectory.path
             launchAtLogin = SettingsManager.shared.launchAtLogin
             captureQuality = SettingsManager.shared.captureQuality
+            saveAsHDR = SettingsManager.shared.saveAsHDR
         }
     }
     

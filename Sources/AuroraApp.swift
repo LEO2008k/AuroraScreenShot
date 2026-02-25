@@ -78,9 +78,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let auth = PermissionsManager.shared
         auth.check()
         
+        // Sync login item state with system on launch
+        if SettingsManager.shared.launchAtLogin {
+            SettingsManager.registerLoginItem(enabled: true)
+        }
+        
         // If we are missing permissions, show the setup window
-        // Note: For development ease, we might want to check if it's the first run, 
-        // but checking actual permissions is safer.
         if !auth.hasScreenRecording || !auth.hasAccessibility {
             showPermissionsWindow()
         } else {
@@ -152,6 +155,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let ocrItem = NSMenuItem(title: "Quick OCR", action: #selector(captureOCR), keyEquivalent: KeyboardShortcuts.keyString(for: ocrShortcut.keyCode))
         ocrItem.keyEquivalentModifierMask = ocrShortcut.nsModifierFlags
         menu.addItem(ocrItem)
+        
+        menu.addItem(NSMenuItem.separator())
+        
+        // HDR Toggle (checkmark)
+        let hdrItem = NSMenuItem(title: "Save as HDR", action: #selector(toggleHDR), keyEquivalent: "")
+        hdrItem.state = SettingsManager.shared.saveAsHDR ? .on : .off
+        // Show quality info in tooltip
+        if SettingsManager.shared.quality == .maximum {
+            hdrItem.isEnabled = true
+        } else {
+            hdrItem.isEnabled = false
+            hdrItem.toolTip = "Requires Maximum quality"
+        }
+        menu.addItem(hdrItem)
         
         menu.addItem(NSMenuItem.separator())
         // Preferences with dynamic shortcut
@@ -270,11 +287,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         overlayController = nil
         
-        // Force autorelease pool drain on next run loop
+        // Force autorelease pool drain and memory reclaim
         DispatchQueue.main.async {
             autoreleasepool {
                 // Drain any pending autoreleased objects (CGImage, NSBitmapImageRep, etc.)
             }
+            // Hint the system to reclaim unused memory pages
+            malloc_zone_pressure_relief(nil, 0)
+            print("🧹 Aggressive memory cleanup complete")
         }
     }
     
@@ -292,6 +312,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func toggleWatermark() {
         SettingsManager.shared.showWatermark.toggle()
         updateMenu()
+    }
+    
+    @objc func toggleHDR() {
+        SettingsManager.shared.saveAsHDR.toggle()
+        updateMenu()
+        print("💎 HDR mode: \(SettingsManager.shared.saveAsHDR ? "ON" : "OFF")")
     }
 
     @objc func captureOCR() {

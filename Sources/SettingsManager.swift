@@ -1,5 +1,6 @@
 import Foundation
 import Cocoa
+import ServiceManagement
 
 // Capture quality levels
 enum CaptureQuality: String, Codable, CaseIterable {
@@ -91,9 +92,40 @@ class SettingsManager {
     
     var launchAtLogin: Bool {
         get { UserDefaults.standard.bool(forKey: kLaunchAtLogin) }
-        set { 
+        set {
             UserDefaults.standard.set(newValue, forKey: kLaunchAtLogin)
-            // TODO: Call helper to register/unregister login item
+            Self.registerLoginItem(enabled: newValue)
+        }
+    }
+    
+    /// Register/unregister the app as a login item using SMAppService (macOS 13+)
+    static func registerLoginItem(enabled: Bool) {
+        if #available(macOS 13.0, *) {
+            let service = SMAppService.mainApp
+            do {
+                if enabled {
+                    if service.status != .enabled {
+                        try service.register()
+                        print("✅ Registered as login item (SMAppService)")
+                    }
+                } else {
+                    if service.status == .enabled {
+                        try service.unregister()
+                        print("🚫 Unregistered login item (SMAppService)")
+                    }
+                }
+            } catch {
+                print("⚠️ Login item registration failed: \(error)")
+            }
+        } else {
+            // Fallback for macOS 12: use deprecated SMLoginItemSetEnabled
+            let bundleID = Bundle.main.bundleIdentifier ?? "com.levkokravchuk.AuroraScreenshot"
+            let success = SMLoginItemSetEnabled(bundleID as CFString, enabled)
+            if success {
+                print("✅ Login item \(enabled ? "enabled" : "disabled") (legacy)")
+            } else {
+                print("⚠️ Failed to \(enabled ? "enable" : "disable") login item (legacy)")
+            }
         }
     }
 
@@ -395,6 +427,14 @@ class SettingsManager {
             return val == 0 ? 15.0 : val // Default 15px
         }
         set { UserDefaults.standard.set(newValue, forKey: kAuroraGlowSize) }
+    }
+    
+    // HDR Settings
+    private let kSaveAsHDR = "SaveAsHDR"
+    
+    var saveAsHDR: Bool {
+        get { UserDefaults.standard.bool(forKey: kSaveAsHDR) }
+        set { UserDefaults.standard.set(newValue, forKey: kSaveAsHDR) }
     }
     
     // Translation Settings

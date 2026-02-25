@@ -802,14 +802,30 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
         autoreleasepool {
             guard let cropped = getCroppedImage(geometry: geometry) else { return }
             
-            let bitmapRep = NSBitmapImageRep(cgImage: cropped)
-            guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else { return }
-            
             let pasteboard = NSPasteboard.general
             pasteboard.clearContents()
-            pasteboard.setData(pngData, forType: .png)
             
-            // MEMORY: Schedule auto-cleanup of clipboard after 5 minutes
+            if SettingsManager.shared.saveAsHDR && SettingsManager.shared.quality == .maximum {
+                // HDR: Copy as HEIF to preserve wide color gamut
+                let ciImage = CIImage(cgImage: cropped)
+                let ciContext = CIContext(options: [.workingColorSpace: CGColorSpace(name: CGColorSpace.displayP3)!])
+                if let heifData = ciContext.heifRepresentation(of: ciImage, format: .RGBA16, colorSpace: CGColorSpace(name: CGColorSpace.displayP3)!) {
+                    pasteboard.setData(heifData, forType: .png) // Use .png type for compatibility
+                    print("📋 Copied HDR image to clipboard (HEIF)")
+                } else {
+                    // Fallback to PNG
+                    let bitmapRep = NSBitmapImageRep(cgImage: cropped)
+                    if let pngData = bitmapRep.representation(using: .png, properties: [:]) {
+                        pasteboard.setData(pngData, forType: .png)
+                    }
+                }
+            } else {
+                let bitmapRep = NSBitmapImageRep(cgImage: cropped)
+                guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else { return }
+                pasteboard.setData(pngData, forType: .png)
+            }
+            
+            // MEMORY: Schedule auto-cleanup of clipboard after timeout
             ClipboardManager.shared.scheduleClipboardCleanup()
         }
         onClose()
@@ -838,11 +854,13 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
     
     func saveImage(geometry: GeometryProxy) {
         var imageToSave: CGImage?
+        let isHDR = SettingsManager.shared.saveAsHDR && SettingsManager.shared.quality == .maximum
+        
         autoreleasepool {
             guard let cropped = getCroppedImage(geometry: geometry) else { return }
             imageToSave = cropped
-            // Downscale logic
-            if SettingsManager.shared.downscaleRetina && cropped.width > 200 {
+            // Downscale logic (skip for HDR to preserve full quality)
+            if !isHDR && SettingsManager.shared.downscaleRetina && cropped.width > 200 {
                 let w = cropped.width/2; let h = cropped.height/2
                 if let ctx = CGContext(data: nil, width: w, height: h, bitsPerComponent: cropped.bitsPerComponent, bytesPerRow: 0, space: cropped.colorSpace ?? CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: cropped.bitmapInfo.rawValue) {
                     ctx.interpolationQuality = .high
@@ -853,37 +871,49 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
         }
         guard let final = imageToSave else { return }
         
-        let rep = NSBitmapImageRep(cgImage: final)
-        
-        // Quality-based compression
-        let quality = SettingsManager.shared.quality
+        // Prepare image data
         let imageData: Data?
         let fileExtension: String
         
-        switch quality {
-        case .minimum:
-            // JPEG with 0.6 compression for < 1MB files
-            imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.6])
-            fileExtension = "jpg"
-        case .medium:
-            // Balanced: JPEG with 0.85 compression
-            imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.85])
-            fileExtension = "jpg"
-        case .maximum:
-            // Lossless PNG for best quality
-            imageData = rep.representation(using: .png, properties: [:])
-            fileExtension = "png"
+        if isHDR {
+            // HDR: Save as HEIF 10-bit with Display P3 color space
+            let ciImage = CIImage(cgImage: final)
+            let ciContext = CIContext(options: [.workingColorSpace: CGColorSpace(name: CGColorSpace.displayP3)!])
+            imageData = ciContext.heifRepresentation(of: ciImage, format: .RGBA16, colorSpace: CGColorSpace(name: CGColorSpace.displayP3)!)
+            fileExtension = "heic"
+            print("💎 Saving as HDR HEIF (.heic)")
+        } else {
+            let rep = NSBitmapImageRep(cgImage: final)
+            let quality = SettingsManager.shared.quality
+            
+            switch quality {
+            case .minimum:
+                imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.6])
+                fileExtension = "jpg"
+            case .medium:
+                imageData = rep.representation(using: .jpeg, properties: [.compressionFactor: 0.85])
+                fileExtension = "jpg"
+            case .maximum:
+                imageData = rep.representation(using: .png, properties: [:])
+                fileExtension = "png"
+            }
         }
         
         guard let finalData = imageData else { return }
         
         let savePanel = NSSavePanel()
-        // Only allow the correct file type for the current quality setting
-        switch quality {
-        case .minimum, .medium:
-            savePanel.allowedContentTypes = [.jpeg]
-        case .maximum:
-            savePanel.allowedContentTypes = [.png]
+        if isHDR {
+            if #available(macOS 11.0, *) {
+                savePanel.allowedContentTypes = [.heic]
+            }
+        } else {
+            let quality = SettingsManager.shared.quality
+            switch quality {
+            case .minimum, .medium:
+                savePanel.allowedContentTypes = [.jpeg]
+            case .maximum:
+                savePanel.allowedContentTypes = [.png]
+            }
         }
         savePanel.canCreateDirectories = true
         savePanel.nameFieldStringValue = "Screenshot_\(Int(Date().timeIntervalSince1970)).\(fileExtension)"

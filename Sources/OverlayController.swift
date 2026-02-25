@@ -100,6 +100,10 @@ class OverlayController: NSWindowController {
         
         // 4. Break SwiftUI hosting view - this releases the CGImage
         if let w = window {
+            // Force the hosting view to release all SwiftUI state (including CGImage refs)
+            if let hostingView = w.contentView {
+                hostingView.subviews.forEach { $0.removeFromSuperview() }
+            }
             w.contentView = nil
             w.orderOut(nil)
             w.close()
@@ -110,12 +114,20 @@ class OverlayController: NSWindowController {
             appDelegate.overlayController = nil
         }
         
-        // 6. Hint system to reclaim memory after a short delay
+        // 6. Aggressive memory reclaim - two phase
+        DispatchQueue.main.async {
+            autoreleasepool {
+                // Phase 1: Drain pending autorelease pool immediately
+            }
+        }
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             autoreleasepool {
-                // Force pending autorelease pool drain
+                // Phase 2: Second drain after SwiftUI teardown completes
             }
-            print("🧹 Memory cleanup hint sent")
+            // Ask malloc to return freed pages to the OS
+            malloc_zone_pressure_relief(nil, 0)
+            print("🧹 Memory reclaimed (malloc_zone_pressure_relief)")
         }
         
         print("Overlay closed")
