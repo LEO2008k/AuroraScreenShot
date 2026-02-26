@@ -76,6 +76,11 @@ struct OverlayView: View {
     // MEMORY: Cached bitmap for pipette color picking (avoid re-creating per drag event)
     @State private var cachedBitmapRep: NSBitmapImageRep? = nil
     
+    // DEBUG: drag start rect to avoid coordinate drift in handles
+    @State private var dragStartRect: CGRect = .zero
+    // DEBUG: on-screen log
+    @State private var debugLog: String = "[DEBUG ready]"
+    
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -212,6 +217,38 @@ struct OverlayView: View {
                     }
                     // Quick OCR and Translation Mode: show only selection, no toolbars
                 }
+                
+                // ─── DEBUG OVERLAY ─────────────────────────────────────────
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("🐛 DEBUG")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(.yellow)
+                    Text("selectionRect: \(Int(selectionRect.minX)),\(Int(selectionRect.minY)) \(Int(selectionRect.width))×\(Int(selectionRect.height))")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.white)
+                    Text("dragStartRect: \(Int(dragStartRect.minX)),\(Int(dragStartRect.minY)) \(Int(dragStartRect.width))×\(Int(dragStartRect.height))")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.cyan)
+                    Text("handle: \(String(describing: currentResizeHandle))")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.green)
+                    Text("toolMode: \(String(describing: viewModel.toolMode))")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.orange)
+                    Divider()
+                    Text(debugLog)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.8))
+                        .lineLimit(6)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(8)
+                .background(Color.black.opacity(0.75))
+                .cornerRadius(8)
+                .frame(width: 340, alignment: .leading)
+                .position(x: 180, y: 120)
+                .allowsHitTesting(false)
+                // ─── END DEBUG ─────────────────────────────────────────────
             }
             .background(Color.clear)
             .contentShape(Rectangle())
@@ -671,10 +708,10 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
             ForEach(handleDefs.indices, id: \.self) { i in
                 let handle = handleDefs[i]
                 ZStack {
-                    // Large invisible tap/drag area (easier to grab)
+                    // Large invisible hit area
                     Circle()
                         .fill(Color.white.opacity(0.001))
-                        .frame(width: 36, height: 36)
+                        .frame(width: 44, height: 44)
                     // Visual dot
                     Circle()
                         .fill(Color.blue)
@@ -686,17 +723,40 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { val in
-                            // val.location is relative to the handle's position in the ZStack
-                            // We need absolute coords: handle position + drag offset
-                            let abs = CGPoint(
-                                x: handle.1.x + val.translation.width,
-                                y: handle.1.y + val.translation.height
+                            // CRITICAL FIX: capture selectionRect ONCE at gesture start
+                            // (handle.1 drifts each re-render; dragStartRect stays fixed)
+                            if dragStartRect == .zero {
+                                dragStartRect = selectionRect
+                                debugLog = "▶ HANDLE START \(handle.0)\n  startLoc=\(Int(val.startLocation.x)),\(Int(val.startLocation.y))\n  handlePos=\(Int(handle.1.x)),\(Int(handle.1.y))"
+                                print("🔵 Handle START: \(handle.0), startLoc=\(val.startLocation), handlePos=\(handle.1)")
+                            }
+                            // Use dragStartRect to get the ORIGINAL handle position (stable, no drift)
+                            let originPos: CGPoint
+                            switch handle.0 {
+                            case .topLeft:     originPos = CGPoint(x: dragStartRect.minX, y: dragStartRect.minY)
+                            case .topRight:    originPos = CGPoint(x: dragStartRect.maxX, y: dragStartRect.minY)
+                            case .bottomLeft:  originPos = CGPoint(x: dragStartRect.minX, y: dragStartRect.maxY)
+                            case .bottomRight: originPos = CGPoint(x: dragStartRect.maxX, y: dragStartRect.maxY)
+                            case .top:         originPos = CGPoint(x: dragStartRect.midX, y: dragStartRect.minY)
+                            case .bottom:      originPos = CGPoint(x: dragStartRect.midX, y: dragStartRect.maxY)
+                            case .left:        originPos = CGPoint(x: dragStartRect.minX, y: dragStartRect.midY)
+                            case .right:       originPos = CGPoint(x: dragStartRect.maxX, y: dragStartRect.midY)
+                            default:           originPos = handle.1
+                            }
+                            let newPos = CGPoint(
+                                x: originPos.x + val.translation.width,
+                                y: originPos.y + val.translation.height
                             )
+                            debugLog = "⟳ HANDLE DRAG \(handle.0)\n  trans=\(Int(val.translation.width)),\(Int(val.translation.height))\n  newPos=\(Int(newPos.x)),\(Int(newPos.y))"
+                            print("🔵 Handle DRAG: \(handle.0), trans=\(val.translation), newPos=\(newPos)")
                             currentResizeHandle = handle.0
-                            resizeSelection(to: abs)
+                            resizeSelection(to: newPos)
                         }
                         .onEnded { _ in
+                            debugLog = "■ HANDLE END \(handle.0)\n  finalRect=\(Int(selectionRect.minX)),\(Int(selectionRect.minY)) \(Int(selectionRect.width))×\(Int(selectionRect.height))"
+                            print("🔵 Handle END: \(handle.0), finalRect=\(selectionRect)")
                             currentResizeHandle = .none
+                            dragStartRect = .zero
                         }
                 )
             }
@@ -959,19 +1019,41 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
     }
     
     func shareSelection(geometry: GeometryProxy) {
-        guard let cropped = getCroppedImage(geometry: geometry) else { return }
+        guard let cropped = getCroppedImage(geometry: geometry) else {
+            debugLog = "❌ SHARE: getCroppedImage returned nil"
+            print("❌ Share: no cropped image")
+            return
+        }
         let nsImage = NSImage(cgImage: cropped, size: NSSize(width: cropped.width, height: cropped.height))
         
-        // Temporarily lower the window level from .screenSaver to .floating,
-        // so NSSharingServicePicker popover appears IN FRONT of our overlay.
-        if let window = NSApp.keyWindow {
-            window.level = .floating
-            let picker = NSSharingServicePicker(items: [nsImage])
-            picker.show(relativeTo: selectionRect, of: window.contentView!, preferredEdge: .minY)
-            // Restore level after picker has opened
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                window.level = .screenSaver
-            }
+        guard let window = NSApp.keyWindow, let contentView = window.contentView else {
+            debugLog = "❌ SHARE: no keyWindow or contentView\n  NSApp.windows=\(NSApp.windows.count)"
+            print("❌ Share: no keyWindow. All windows: \(NSApp.windows.map { "\($0.level.rawValue)" })")
+            return
+        }
+        
+        let viewBounds = contentView.bounds
+        // NSView uses flipped Y: convert SwiftUI selectionRect → NSView coords
+        let nsRect = CGRect(
+            x: selectionRect.minX,
+            y: viewBounds.height - selectionRect.maxY,
+            width: selectionRect.width,
+            height: selectionRect.height
+        )
+        
+        debugLog = "📤 SHARE called\n  windowLevel=\(window.level.rawValue)\n  viewBounds=\(Int(viewBounds.width))×\(Int(viewBounds.height))\n  selRect=\(Int(selectionRect.minX)),\(Int(selectionRect.minY))\n  nsRect=\(Int(nsRect.minX)),\(Int(nsRect.minY))"
+        print("📤 Share: level=\(window.level.rawValue), bounds=\(viewBounds), selRect=\(selectionRect), nsRect=\(nsRect)")
+        
+        // Lower level so picker appears above overlay
+        window.level = .floating
+        
+        let picker = NSSharingServicePicker(items: [nsImage])
+        // Use Y-flipped rect for correct Cocoa coordinate space
+        picker.show(relativeTo: nsRect, of: contentView, preferredEdge: .minY)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            window.level = .screenSaver
+            print("📤 Share: restored window level to screenSaver")
         }
     }
     
