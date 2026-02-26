@@ -393,7 +393,6 @@ struct GeneralSettingsView: View {
     @State private var captureQuality = SettingsManager.shared.captureQuality
     @State private var saveAsHDR = SettingsManager.shared.saveAsHDR
     @AppStorage("showTranslateButton") private var showTranslateButton = true // Merged
-    @State private var isDebugMode = SettingsManager.shared.isDebugMode
     
     var body: some View {
         Form {
@@ -535,9 +534,24 @@ struct GeneralSettingsView: View {
                 
                 Toggle("Save as HDR", isOn: $saveAsHDR)
                     .toggleStyle(SwitchToggleStyle(tint: .purple))
-                    .disabled(!isMaxQuality)
                     .onChange(of: saveAsHDR) { newValue in
-                        SettingsManager.shared.saveAsHDR = newValue
+                        if newValue {
+                            if !isMaxQuality {
+                                if SettingsManager.canUseMaximumQuality() {
+                                    captureQuality = CaptureQuality.maximum.rawValue
+                                    SettingsManager.shared.quality = .maximum
+                                    SettingsManager.shared.saveAsHDR = true
+                                } else {
+                                    // Memory too low, revert toggle
+                                    saveAsHDR = false
+                                    showLowRAMAlert()
+                                }
+                            } else {
+                                SettingsManager.shared.saveAsHDR = true
+                            }
+                        } else {
+                            SettingsManager.shared.saveAsHDR = false
+                        }
                     }
                 
                 if isMaxQuality {
@@ -567,35 +581,6 @@ struct GeneralSettingsView: View {
             }
             
              Section(header: Text("Troubleshooting")) {
-                 Toggle("Developer Debug Mode", isOn: $isDebugMode)
-                     .help("Enables debug overlay and debug.log writing.")
-                     .onChange(of: isDebugMode) { newValue in
-                         SettingsManager.shared.isDebugMode = newValue
-                         // Notify app delegate to update the menu
-                         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
-                             appDelegate.updateMenu()
-                         }
-                         if newValue {
-                             DebugLogger.shared.log("Debug mode ENABLED via Preferences", category: "SYS")
-                         } else {
-                             DebugLogger.shared.log("Debug mode DISABLED via Preferences", category: "SYS")
-                         }
-                     }
-                 
-                 if isDebugMode {
-                     Button {
-                         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
-                             appDelegate.openDebugLog()
-                         }
-                     } label: {
-                         HStack {
-                             Image(systemName: "ladybug")
-                             Text("View Debug Log...")
-                         }
-                     }
-                     .padding(.leading, 20)
-                 }
-                 
                  Button(role: .destructive) {
                      showResetAlert = true
                  } label: {
@@ -627,7 +612,6 @@ struct GeneralSettingsView: View {
             launchAtLogin = SettingsManager.shared.launchAtLogin
             captureQuality = SettingsManager.shared.captureQuality
             saveAsHDR = SettingsManager.shared.saveAsHDR
-            isDebugMode = SettingsManager.shared.isDebugMode
         }
     }
     
@@ -883,6 +867,7 @@ struct AboutSettingsView: View {
     @State private var repoUrl = SettingsManager.shared.repositoryURL
     @State private var autoRestart = SettingsManager.shared.autoRestartAfterUpdate
     @State private var autoCheckUpdates = SettingsManager.shared.autoCheckUpdates
+    @State private var isDebugMode = SettingsManager.shared.isDebugMode
     
     @State private var showUpdateAlert = false
     @State private var updateMessage = ""
@@ -926,6 +911,37 @@ struct AboutSettingsView: View {
                         )
                 )
                 .padding(.horizontal, 8)
+            }
+            
+            Section(header: Text("Troubleshooting")) {
+                 Toggle("Developer Debug Mode", isOn: $isDebugMode)
+                     .help("Enables debug overlay and debug.log writing.")
+                     .onChange(of: isDebugMode) { newValue in
+                         SettingsManager.shared.isDebugMode = newValue
+                         // Notify app delegate to update the menu
+                         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
+                             appDelegate.updateMenu()
+                         }
+                         if newValue {
+                             DebugLogger.shared.log("Debug mode ENABLED via Preferences", category: "SYS")
+                         } else {
+                             DebugLogger.shared.log("Debug mode DISABLED via Preferences", category: "SYS")
+                         }
+                     }
+                 
+                 if isDebugMode {
+                     Button {
+                         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
+                             appDelegate.openDebugLog()
+                         }
+                     } label: {
+                         HStack {
+                             Image(systemName: "ladybug")
+                             Text("View Debug Log...")
+                         }
+                     }
+                     .padding(.leading, 20)
+                 }
             }
             
             Section(header: Text("Updates")) {
@@ -1073,6 +1089,7 @@ struct AboutSettingsView: View {
             proxyServer = SettingsManager.shared.proxyServer
             repoUrl = SettingsManager.shared.repositoryURL
             autoCheckUpdates = SettingsManager.shared.autoCheckUpdates
+            isDebugMode = SettingsManager.shared.isDebugMode
             
             if autoCheckUpdates {
                 checkForUpdates(silent: true)
