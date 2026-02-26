@@ -16,6 +16,7 @@ class DebugLogger {
     }
     
     func log(_ message: String, category: String = "INFO") {
+        guard UserDefaults.standard.bool(forKey: "DebugModeEnabled") else { return }
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm:ss.SSS"
         let timestamp = formatter.string(from: Date())

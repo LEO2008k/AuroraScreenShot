@@ -49,6 +49,7 @@ struct OverlayView: View {
     @AppStorage("ShowTimestamp") private var showTimestampButton = false
     @AppStorage("ShowWatermark") private var showWatermarkButton = false
     @AppStorage("EnableAurora") private var enableAurora = false
+    @AppStorage("DebugModeEnabled") private var isDebugMode = false
     
     // Local State for Manual Application
     @State private var isTimestampApplied = false
@@ -73,12 +74,18 @@ struct OverlayView: View {
     // MEMORY: Event monitor reference for cleanup
     @State private var scrollMonitor: Any? = nil
     
-    // MEMORY: Cached bitmap for pipette color picking (avoid re-creating per drag event)
+    // MEMORY: Cached bitmap for pipette color picking
     @State private var cachedBitmapRep: NSBitmapImageRep? = nil
     
     // DEBUG
     @State private var dragStartRect: CGRect = .zero
     @State private var debugLog: String = "[DEBUG ready]"
+    
+    // NSEvent monitors for handle resize (SwiftUI DragGesture doesn't work reliably on macOS)
+    @State private var handleMouseDownMonitor: Any? = nil
+    @State private var handleMouseDragMonitor: Any? = nil
+    @State private var handleMouseUpMonitor: Any? = nil
+    @State private var isHandleDragging: Bool = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -165,9 +172,11 @@ struct OverlayView: View {
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
+                                guard !isHandleDragging else { return } // NSEvent handles this
                                 handleDrag(value: value, geometry: geometry)
                             }
                             .onEnded { _ in
+                                guard !isHandleDragging else { return }
                                 handleDragEnd(geometry: geometry)
                             }
                     )
@@ -218,35 +227,37 @@ struct OverlayView: View {
                 }
                 
                 // ─── DEBUG OVERLAY ─────────────────────────────────────────
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("🐛 DEBUG")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(.yellow)
-                    Text("selectionRect: \(Int(selectionRect.minX)),\(Int(selectionRect.minY)) \(Int(selectionRect.width))×\(Int(selectionRect.height))")
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundColor(.white)
-                    Text("dragStartRect: \(Int(dragStartRect.minX)),\(Int(dragStartRect.minY)) \(Int(dragStartRect.width))×\(Int(dragStartRect.height))")
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundColor(.cyan)
-                    Text("handle: \(String(describing: currentResizeHandle))")
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundColor(.green)
-                    Text("toolMode: \(String(describing: viewModel.toolMode))")
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundColor(.orange)
-                    Divider()
-                    Text(debugLog)
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.8))
-                        .lineLimit(6)
-                        .fixedSize(horizontal: false, vertical: true)
+                if isDebugMode {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("🐛 DEBUG")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(.yellow)
+                        Text("selectionRect: \(Int(selectionRect.minX)),\(Int(selectionRect.minY)) \(Int(selectionRect.width))×\(Int(selectionRect.height))")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.white)
+                        Text("dragStartRect: \(Int(dragStartRect.minX)),\(Int(dragStartRect.minY)) \(Int(dragStartRect.width))×\(Int(dragStartRect.height))")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.cyan)
+                        Text("handle: \(String(describing: currentResizeHandle))")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.green)
+                        Text("toolMode: \(String(describing: viewModel.toolMode))")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.orange)
+                        Divider()
+                        Text(debugLog)
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.8))
+                            .lineLimit(6)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(8)
+                    .background(Color.black.opacity(0.75))
+                    .cornerRadius(8)
+                    .frame(width: 340, alignment: .leading)
+                    .position(x: 180, y: 120)
+                    .allowsHitTesting(false)
                 }
-                .padding(8)
-                .background(Color.black.opacity(0.75))
-                .cornerRadius(8)
-                .frame(width: 340, alignment: .leading)
-                .position(x: 180, y: 120)
-                .allowsHitTesting(false)
                 // ─── END DEBUG ─────────────────────────────────────────────
             }
             .background(Color.clear)
@@ -264,27 +275,66 @@ struct OverlayView: View {
                         let delta = event.scrollingDeltaY
                         // Cycle zoom levels: 1.5x → 2.0x → 4.0x
                         if delta > 0 {
-                            // Scroll up: increase zoom
                             if magnifyZoomFactor < 2.0 { magnifyZoomFactor = 2.0 }
                             else if magnifyZoomFactor < 4.0 { magnifyZoomFactor = 4.0 }
                         } else if delta < 0 {
-                            // Scroll down: decrease zoom
                             if magnifyZoomFactor > 2.0 { magnifyZoomFactor = 2.0 }
                             else if magnifyZoomFactor > 1.5 { magnifyZoomFactor = 1.5 }
                         }
-                        // Save to settings
                         SettingsManager.shared.magnifierZoomFactor = magnifyZoomFactor
-                        return nil // Consume event
+                        return nil
                     }
-                    return event // Pass through
+                    return event
+                }
+                
+                // NSEvent monitors for handle resize
+                // SwiftUI DragGesture on macOS full-screen overlay is unreliable.
+                // NSEvent fires for ALL mouse events - guaranteed.
+                handleMouseDownMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [self] event in
+                    guard viewModel.toolMode == .selection, selectionRect != .zero else { return event }
+                    guard let point = viewPointFromEvent(event) else { return event }
+                    let handle = hitTestHandle(point: point)
+                    if handle != .none {
+                        currentResizeHandle = handle
+                        dragStartRect = selectionRect
+                        isHandleDragging = true
+                        let msg = "HANDLE_DOWN \(handle) @ \(Int(point.x)),\(Int(point.y)) selRect=\(Int(selectionRect.minX)),\(Int(selectionRect.minY)) \(Int(selectionRect.width))×\(Int(selectionRect.height))"
+                        debugLog = "▶ " + msg
+                        DebugLogger.shared.log(msg, category: "HANDLE")
+                    } else {
+                        DebugLogger.shared.log("MOUSE_DOWN (no handle) @ \(Int(point.x)),\(Int(point.y))", category: "MOUSE")
+                    }
+                    return event
+                }
+                
+                handleMouseDragMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDragged) { [self] event in
+                    guard isHandleDragging, currentResizeHandle != .none else { return event }
+                    guard let point = viewPointFromEvent(event) else { return event }
+                    let msg = "HANDLE_DRAG \(currentResizeHandle) → \(Int(point.x)),\(Int(point.y))"
+                    debugLog = "⟳ " + msg
+                    DebugLogger.shared.log(msg, category: "HANDLE")
+                    resizeSelection(to: point)
+                    return event
+                }
+                
+                handleMouseUpMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseUp) { [self] event in
+                    guard isHandleDragging else { return event }
+                    let msg = "HANDLE_UP \(currentResizeHandle) finalRect=\(Int(selectionRect.minX)),\(Int(selectionRect.minY)) \(Int(selectionRect.width))×\(Int(selectionRect.height))"
+                    debugLog = "■ " + msg
+                    DebugLogger.shared.log(msg, category: "HANDLE")
+                    currentResizeHandle = .none
+                    dragStartRect = .zero
+                    isHandleDragging = false
+                    return event
                 }
             }
             .onDisappear {
-                // MEMORY FIX: Remove scroll event monitor to break retain cycle
-                if let monitor = scrollMonitor {
-                    NSEvent.removeMonitor(monitor)
-                    scrollMonitor = nil
-                }
+                // MEMORY FIX: Remove scroll event monitor
+                if let monitor = scrollMonitor { NSEvent.removeMonitor(monitor); scrollMonitor = nil }
+                // Remove handle mouse monitors
+                if let m = handleMouseDownMonitor { NSEvent.removeMonitor(m); handleMouseDownMonitor = nil }
+                if let m = handleMouseDragMonitor { NSEvent.removeMonitor(m); handleMouseDragMonitor = nil }
+                if let m = handleMouseUpMonitor { NSEvent.removeMonitor(m); handleMouseUpMonitor = nil }
                 
                 // Explicit cleanup to help release memory
                 viewModel.drawings.removeAll()
@@ -358,7 +408,6 @@ struct OverlayView: View {
     func handleDragEnd(geometry: GeometryProxy) {
         if viewModel.toolMode == .selection {
             startPoint = nil
-            // Note: currentResizeHandle is reset in each handle's .onEnded
             if isQuickOCR && selectionRect != .zero { performOCR(geometry: geometry) }
             else if isTranslationMode && selectionRect != .zero { performTranslation(geometry: geometry) }
         } else {
@@ -366,6 +415,15 @@ struct OverlayView: View {
             currentDrawing = nil
             startPoint = nil
         }
+    }
+    
+    /// Convert NSEvent window coordinates → SwiftUI view coordinates (flip Y)
+    func viewPointFromEvent(_ event: NSEvent) -> CGPoint? {
+        let window = event.window ?? NSApp.keyWindow
+        guard let win = window, let contentView = win.contentView else { return nil }
+        let wp = event.locationInWindow
+        // NSView origin = bottom-left; SwiftUI origin = top-left → flip Y
+        return CGPoint(x: wp.x, y: contentView.bounds.height - wp.y)
     }
 
     private func getFormattedDate() -> String {
@@ -691,7 +749,6 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
     func selectionHandles() -> some View {
         if selectionRect == .zero { return AnyView(EmptyView()) }
         
-        // Each handle: (which edge it controls, position on screen)
         let handleDefs: [(ResizeHandle, CGPoint)] = [
             (.topLeft,     CGPoint(x: selectionRect.minX, y: selectionRect.minY)),
             (.topRight,    CGPoint(x: selectionRect.maxX, y: selectionRect.minY)),
@@ -703,64 +760,21 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
             (.right,       CGPoint(x: selectionRect.maxX, y: selectionRect.midY)),
         ]
         
+        // VISUAL ONLY — interaction handled by NSEvent monitors (handleMouseDownMonitor etc.)
         return AnyView(
             ForEach(handleDefs.indices, id: \.self) { i in
-                let handle = handleDefs[i]
+                let isActive = (handleDefs[i].0 == currentResizeHandle)
                 ZStack {
-                    // Large invisible hit area
                     Circle()
-                        .fill(Color.white.opacity(0.001))
-                        .frame(width: 44, height: 44)
-                    // Visual dot
-                    Circle()
-                        .fill(Color.blue)
+                        .fill(isActive ? Color.white : Color.blue)
                         .frame(width: 12, height: 12)
                         .overlay(Circle().stroke(Color.white, lineWidth: 2))
                         .shadow(color: Color.black.opacity(0.4), radius: 2, x: 0, y: 1)
+                        .scaleEffect(isActive ? 1.4 : 1.0)
+                        .animation(.easeInOut(duration: 0.1), value: isActive)
                 }
-                .position(handle.1)
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { val in
-                            // CRITICAL FIX: capture selectionRect ONCE at gesture start
-                            // (handle.1 drifts each re-render; dragStartRect stays fixed)
-                            if dragStartRect == .zero {
-                                dragStartRect = selectionRect
-                                let msg = "HANDLE START \(handle.0) startLoc=\(Int(val.startLocation.x)),\(Int(val.startLocation.y)) handlePos=\(Int(handle.1.x)),\(Int(handle.1.y))"
-                                debugLog = "▶ " + msg
-                                DebugLogger.shared.log(msg, category: "HANDLE")
-                            }
-                            // Use dragStartRect to get the ORIGINAL handle position (stable, no drift)
-                            let originPos: CGPoint
-                            switch handle.0 {
-                            case .topLeft:     originPos = CGPoint(x: dragStartRect.minX, y: dragStartRect.minY)
-                            case .topRight:    originPos = CGPoint(x: dragStartRect.maxX, y: dragStartRect.minY)
-                            case .bottomLeft:  originPos = CGPoint(x: dragStartRect.minX, y: dragStartRect.maxY)
-                            case .bottomRight: originPos = CGPoint(x: dragStartRect.maxX, y: dragStartRect.maxY)
-                            case .top:         originPos = CGPoint(x: dragStartRect.midX, y: dragStartRect.minY)
-                            case .bottom:      originPos = CGPoint(x: dragStartRect.midX, y: dragStartRect.maxY)
-                            case .left:        originPos = CGPoint(x: dragStartRect.minX, y: dragStartRect.midY)
-                            case .right:       originPos = CGPoint(x: dragStartRect.maxX, y: dragStartRect.midY)
-                            default:           originPos = handle.1
-                            }
-                            let newPos = CGPoint(
-                                x: originPos.x + val.translation.width,
-                                y: originPos.y + val.translation.height
-                            )
-                            let msg2 = "HANDLE DRAG \(handle.0) trans=\(Int(val.translation.width)),\(Int(val.translation.height)) newPos=\(Int(newPos.x)),\(Int(newPos.y))"
-                            debugLog = "⟳ " + msg2
-                            DebugLogger.shared.log(msg2, category: "HANDLE")
-                            currentResizeHandle = handle.0
-                            resizeSelection(to: newPos)
-                        }
-                        .onEnded { _ in
-                            let msg3 = "HANDLE END \(handle.0) finalRect=\(Int(selectionRect.minX)),\(Int(selectionRect.minY)) \(Int(selectionRect.width))×\(Int(selectionRect.height))"
-                            debugLog = "■ " + msg3
-                            DebugLogger.shared.log(msg3, category: "HANDLE")
-                            currentResizeHandle = .none
-                            dragStartRect = .zero
-                        }
-                )
+                .position(handleDefs[i].1)
+                .allowsHitTesting(false) // NSEvent handles touches
             }
         )
     }

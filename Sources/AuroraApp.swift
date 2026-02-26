@@ -180,6 +180,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Debug Log
         menu.addItem(NSMenuItem(title: "Debug Log...", action: #selector(openDebugLog), keyEquivalent: ""))
         
+        // Debug Mode toggle
+        let isDebug = UserDefaults.standard.bool(forKey: "DebugModeEnabled")
+        let debugItem = NSMenuItem(title: "🐛 Debug Mode", action: #selector(toggleDebugMode), keyEquivalent: "")
+        debugItem.state = isDebug ? .on : .off
+        menu.addItem(debugItem)
+        
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         
@@ -189,6 +195,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func refreshForHotkeyChange() {
         updateMenu()
         updateGlobalHotkey()
+    }
+    
+    @objc func toggleDebugMode() {
+        let current = UserDefaults.standard.bool(forKey: "DebugModeEnabled")
+        UserDefaults.standard.set(!current, forKey: "DebugModeEnabled")
+        updateMenu()
+        if !current {
+            DebugLogger.shared.log("Debug mode ENABLED", category: "SYS")
+        } else {
+            DebugLogger.shared.log("Debug mode DISABLED", category: "SYS")
+        }
     }
     
     func updateGlobalHotkey() {
