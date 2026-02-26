@@ -33,6 +33,8 @@ cd AuroraScreenShot
 ./bundle_app.sh
 ```
 
+> **⚠️ Important Note for Developers**: To avoid aggressive caching issues with Swift Package Manager (like old UI elements persisting), make sure to run `swift package clean` **every 5 builds**.
+
 ## 📋 Requirements
 
 - macOS 12.0+
