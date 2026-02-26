@@ -393,7 +393,7 @@ struct GeneralSettingsView: View {
     @State private var captureQuality = SettingsManager.shared.captureQuality
     @State private var saveAsHDR = SettingsManager.shared.saveAsHDR
     @AppStorage("showTranslateButton") private var showTranslateButton = true // Merged
-    @AppStorage("DebugModeEnabled") private var isDebugMode = false
+    @State private var isDebugMode = SettingsManager.shared.isDebugMode
     
     var body: some View {
         Form {
@@ -570,6 +570,7 @@ struct GeneralSettingsView: View {
                  Toggle("Developer Debug Mode", isOn: $isDebugMode)
                      .help("Enables debug overlay and debug.log writing.")
                      .onChange(of: isDebugMode) { newValue in
+                         SettingsManager.shared.isDebugMode = newValue
                          // Notify app delegate to update the menu
                          if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
                              appDelegate.updateMenu()
@@ -612,6 +613,7 @@ struct GeneralSettingsView: View {
             launchAtLogin = SettingsManager.shared.launchAtLogin
             captureQuality = SettingsManager.shared.captureQuality
             saveAsHDR = SettingsManager.shared.saveAsHDR
+            isDebugMode = SettingsManager.shared.isDebugMode
         }
     }
     

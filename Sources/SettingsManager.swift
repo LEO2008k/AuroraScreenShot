@@ -611,6 +611,14 @@ class SettingsManager {
         }
     }
     
+    // Developer Debug Mode
+    private let kDebugModeEnabled = "DebugModeEnabled"
+    
+    var isDebugMode: Bool {
+        get { UserDefaults.standard.bool(forKey: kDebugModeEnabled) }
+        set { UserDefaults.standard.set(newValue, forKey: kDebugModeEnabled) }
+    }
+    
     // MARK: - Factory Reset
     func resetToDefaults() {
         if let bundleID = Bundle.main.bundleIdentifier {
