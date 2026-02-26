@@ -177,6 +177,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         prefItem.keyEquivalentModifierMask = prefShortcut.nsModifierFlags
         menu.addItem(prefItem)
         
+        // Debug Log
+        menu.addItem(NSMenuItem(title: "Debug Log...", action: #selector(openDebugLog), keyEquivalent: ""))
+        
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         
@@ -272,6 +275,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         preferencesWindow?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+    }
+    
+    var debugLogWindow: NSWindow?
+    
+    @objc func openDebugLog() {
+        let logContent = DebugLogger.shared.readLog()
+        
+        if debugLogWindow == nil {
+            let window = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 700, height: 480),
+                styleMask: [.titled, .closable, .resizable, .miniaturizable],
+                backing: .buffered,
+                defer: false
+            )
+            window.title = "Debug Log — AuroraScreenshot"
+            window.center()
+            window.isReleasedWhenClosed = false
+            debugLogWindow = window
+        }
+        
+        let view = DebugLogView(
+            logText: logContent,
+            onCopy: {
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(DebugLogger.shared.readLog(), forType: .string)
+            },
+            onClear: {
+                DebugLogger.shared.clearLog()
+            },
+            onShowInFinder: {
+                DebugLogger.shared.openInFinder()
+            }
+        )
+        debugLogWindow?.contentView = NSHostingView(rootView: view)
+        debugLogWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
     
