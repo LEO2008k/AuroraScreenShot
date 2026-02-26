@@ -363,6 +363,7 @@ struct OverlayView: View {
                 .padding([.bottom, .trailing], 10)
                 .frame(width: selectionRect.width, height: selectionRect.height, alignment: .bottomTrailing)
                 .position(x: selectionRect.midX, y: selectionRect.midY)
+                .allowsHitTesting(false)
         }
     }
     
@@ -374,6 +375,7 @@ struct OverlayView: View {
                 .foregroundColor(viewModel.selectedColor.opacity(0.3))
                 .frame(width: selectionRect.width, height: selectionRect.height, alignment: .center)
                 .position(x: selectionRect.midX, y: selectionRect.midY)
+                .allowsHitTesting(false)
         }
     }
 
@@ -933,12 +935,41 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
     func shareSelection(geometry: GeometryProxy) {
         guard let cropped = getCroppedImage(geometry: geometry) else { return }
         let nsImage = NSImage(cgImage: cropped, size: NSSize(width: cropped.width, height: cropped.height))
-        let picker = NSSharingServicePicker(items: [nsImage])
-        if let window = NSApp.keyWindow, let contentView = window.contentView {
-             // Show the picker relative to the selection area
-             // Note: Do NOT call onClose() here — it destroys the window before the picker can display.
-             // The user can close overlay manually after sharing (ESC or Close button).
-             picker.show(relativeTo: selectionRect, of: contentView, preferredEdge: .minY)
+        
+        // Close the overlay FIRST, then show share picker after a short delay
+        // This is necessary because the overlay window is at .screenSaver level,
+        // which causes NSSharingServicePicker's popover to appear BEHIND it.
+        onClose()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            // Create a temporary invisible window to anchor the share picker
+            let tempWindow = NSWindow(
+                contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),
+                styleMask: [.borderless],
+                backing: .buffered,
+                defer: false
+            )
+            tempWindow.isReleasedWhenClosed = false
+            tempWindow.backgroundColor = .clear
+            tempWindow.level = .floating
+            
+            // Center the temp window on screen
+            if let screen = NSScreen.main {
+                let screenFrame = screen.frame
+                tempWindow.setFrameOrigin(NSPoint(
+                    x: screenFrame.midX - 0.5,
+                    y: screenFrame.midY - 0.5
+                ))
+            }
+            tempWindow.orderFront(nil)
+            
+            let picker = NSSharingServicePicker(items: [nsImage])
+            picker.show(relativeTo: tempWindow.contentView!.bounds, of: tempWindow.contentView!, preferredEdge: .minY)
+            
+            // Auto-close temp window after a delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
+                tempWindow.close()
+            }
         }
     }
     
@@ -1240,6 +1271,7 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
             .blur(radius: glowSize)
             .opacity(0.6)
         }
+        .allowsHitTesting(false) // CRITICAL: Don't block drag gestures for selection resize handles
         .onAppear { withAnimation(Animation.linear(duration: 3).repeatForever(autoreverses: false)) { auroraRotation = 360 } }
     }
 }
