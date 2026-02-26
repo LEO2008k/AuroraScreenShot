@@ -161,13 +161,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // HDR Toggle (checkmark)
         let hdrItem = NSMenuItem(title: "Save as HDR", action: #selector(toggleHDR), keyEquivalent: "")
         hdrItem.state = SettingsManager.shared.saveAsHDR ? .on : .off
-        // Show quality info in tooltip
-        if SettingsManager.shared.quality == .maximum {
-            hdrItem.isEnabled = true
-        } else {
-            hdrItem.isEnabled = false
-            hdrItem.toolTip = "Requires Maximum quality"
-        }
+        // Enable always: toggleHDR will change capture quality if needed
+        hdrItem.isEnabled = true
         menu.addItem(hdrItem)
         
         menu.addItem(NSMenuItem.separator())
@@ -176,6 +171,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let prefItem = NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: KeyboardShortcuts.keyString(for: prefShortcut.keyCode))
         prefItem.keyEquivalentModifierMask = prefShortcut.nsModifierFlags
         menu.addItem(prefItem)
+        
+        let isDebug = SettingsManager.shared.isDebugMode
+        if isDebug {
+            menu.addItem(NSMenuItem(title: "Debug Log...", action: #selector(openDebugLog), keyEquivalent: ""))
+            let debugItem = NSMenuItem(title: "🐛 Debug Mode", action: #selector(toggleDebugMode), keyEquivalent: "")
+            debugItem.state = .on
+            menu.addItem(debugItem)
+        }
         
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -186,6 +189,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func refreshForHotkeyChange() {
         updateMenu()
         updateGlobalHotkey()
+    }
+    
+    @objc func toggleDebugMode() {
+        // Since this menu is only shown when ON, clicking it turns it OFF
+        SettingsManager.shared.isDebugMode = false
+        updateMenu()
+        DebugLogger.shared.log("Debug mode DISABLED via Menu", category: "SYS")
     }
     
     func updateGlobalHotkey() {
@@ -351,7 +361,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func toggleHDR() {
-        SettingsManager.shared.saveAsHDR.toggle()
+        let current = SettingsManager.shared.saveAsHDR
+        if !current {
+            // Turning it on
+            if SettingsManager.canUseMaximumQuality() {
+                SettingsManager.shared.quality = .maximum
+                SettingsManager.shared.saveAsHDR = true
+            } else {
+                let alert = NSAlert()
+                alert.messageText = "Insufficient RAM"
+                alert.informativeText = "Save as HDR requires Maximum quality, which needs at least 12GB of RAM."
+                alert.alertStyle = .warning
+                alert.runModal()
+            }
+        } else {
+            // Turning it off
+            SettingsManager.shared.saveAsHDR = false
+        }
         updateMenu()
         print("💎 HDR mode: \(SettingsManager.shared.saveAsHDR ? "ON" : "OFF")")
     }

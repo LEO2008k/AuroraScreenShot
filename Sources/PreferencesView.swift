@@ -461,6 +461,10 @@ struct GeneralSettingsView: View {
                             showLowRAMAlert()
                         } else {
                             SettingsManager.shared.quality = quality
+                            if quality != .maximum {
+                                saveAsHDR = false
+                                SettingsManager.shared.saveAsHDR = false
+                            }
                         }
                     }
                 }
