@@ -177,10 +177,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         prefItem.keyEquivalentModifierMask = prefShortcut.nsModifierFlags
         menu.addItem(prefItem)
         
-        let isDebug = UserDefaults.standard.bool(forKey: "DebugModeEnabled")
-        if isDebug {
-            menu.addItem(NSMenuItem(title: "🐛 View Debug Log...", action: #selector(openDebugLog), keyEquivalent: ""))
-        }
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         

@@ -582,6 +582,20 @@ struct GeneralSettingsView: View {
                          }
                      }
                  
+                 if isDebugMode {
+                     Button {
+                         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
+                             appDelegate.openDebugLog()
+                         }
+                     } label: {
+                         HStack {
+                             Image(systemName: "ladybug")
+                             Text("View Debug Log...")
+                         }
+                     }
+                     .padding(.leading, 20)
+                 }
+                 
                  Button(role: .destructive) {
                      showResetAlert = true
                  } label: {
