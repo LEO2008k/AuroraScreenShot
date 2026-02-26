@@ -916,38 +916,6 @@ struct AboutSettingsView: View {
                 )
                 .padding(.horizontal, 8)
             }
-            
-            Section(header: Text("Troubleshooting")) {
-                 Toggle("Developer Debug Mode", isOn: $isDebugMode)
-                     .help("Enables debug overlay and debug.log writing.")
-                     .onChange(of: isDebugMode) { newValue in
-                         SettingsManager.shared.isDebugMode = newValue
-                         // Notify app delegate to update the menu
-                         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
-                             appDelegate.updateMenu()
-                         }
-                         if newValue {
-                             DebugLogger.shared.log("Debug mode ENABLED via Preferences", category: "SYS")
-                         } else {
-                             DebugLogger.shared.log("Debug mode DISABLED via Preferences", category: "SYS")
-                         }
-                     }
-                 
-                 if isDebugMode {
-                     Button {
-                         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
-                             appDelegate.openDebugLog()
-                         }
-                     } label: {
-                         HStack {
-                             Image(systemName: "ladybug")
-                             Text("View Debug Log...")
-                         }
-                     }
-                     .padding(.leading, 20)
-                 }
-            }
-            
             Section(header: Text("Updates")) {
                 Toggle("Automatically check for updates", isOn: $autoCheckUpdates)
                     .onChange(of: autoCheckUpdates) { newValue in
@@ -1007,6 +975,37 @@ struct AboutSettingsView: View {
                 Text("Leave empty to use system settings")
                     .font(.caption)
                     .foregroundColor(.secondary)
+            }
+            
+            Section(header: Text("Troubleshooting")) {
+                 Toggle("Developer Debug Mode", isOn: $isDebugMode)
+                     .help("Enables debug overlay and debug.log writing.")
+                     .onChange(of: isDebugMode) { newValue in
+                         SettingsManager.shared.isDebugMode = newValue
+                         // Notify app delegate to update the menu
+                         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
+                             appDelegate.updateMenu()
+                         }
+                         if newValue {
+                             DebugLogger.shared.log("Debug mode ENABLED via Preferences", category: "SYS")
+                         } else {
+                             DebugLogger.shared.log("Debug mode DISABLED via Preferences", category: "SYS")
+                         }
+                     }
+                 
+                 if isDebugMode {
+                     Button {
+                         if let appDelegate = NSApplication.shared.delegate as? AppDelegate {
+                             appDelegate.openDebugLog()
+                         }
+                     } label: {
+                         HStack {
+                             Image(systemName: "ladybug")
+                             Text("View Debug Log...")
+                         }
+                     }
+                     .padding(.leading, 20)
+                 }
             }
             
             Section(header: Text("Credits & Support")) {
