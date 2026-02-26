@@ -147,17 +147,15 @@ struct OverlayView: View {
                 }
                 .clipShape(Rectangle().path(in: selectionRect != .zero ? selectionRect : CGRect(origin: .zero, size: geometry.size)))
                 
-                // LAYER 1: DECORATIVE VIEWS (below gesture layer — won't block drags)
+                // LAYER 1: PURELY DECORATIVE (below gesture layer — no hit testing)
                 if selectionRect != .zero {
                     if enableAurora { auroraGlow() }
                     selectionBorder()
-                    selectionHandles()
                     timestampPreview()
                     watermarkPreview()
                 }
                 
-                // LAYER 2: GESTURE HANDLER (above decorative, below interactive bars)
-                // Catches all drag events for selection creation, resize, and drawing
+                // LAYER 2: MAIN GESTURE HANDLER (new selections + drawing tools)
                 Color.clear
                     .contentShape(Rectangle())
                     .gesture(
@@ -170,8 +168,10 @@ struct OverlayView: View {
                             }
                     )
                 
-                // LAYER 3: INTERACTIVE UI (above gesture layer — buttons receive taps)
+                // LAYER 3: INTERACTIVE UI (above gesture layer — receives input first)
                 if selectionRect != .zero {
+                    // Handles have own DragGesture — must be above main gesture layer
+                    selectionHandles()
                     if !isQuickOCR && !isTranslationMode {
                         // Action Bar and Tools (only for regular mode)
                         actionBar(geometry: geometry)
@@ -276,17 +276,9 @@ struct OverlayView: View {
         if viewModel.toolMode == .selection {
             if startPoint == nil {
                 startPoint = value.startLocation
-                currentResizeHandle = hitTestHandle(point: value.startLocation)
-                if currentResizeHandle == .none {
-                    startPoint = value.startLocation
-                    selectionRect = CGRect(origin: value.startLocation, size: .zero)
-                }
+                selectionRect = CGRect(origin: value.startLocation, size: .zero)
             }
-            if currentResizeHandle != .none {
-                resizeSelection(to: point)
-            } else {
-                updateSelection(to: point)
-            }
+            updateSelection(to: point)
         } else if viewModel.toolMode == .magnify {
             // Magnify Tool: Draw magnification rectangle
             if startPoint == nil {
@@ -330,14 +322,13 @@ struct OverlayView: View {
     func handleDragEnd(geometry: GeometryProxy) {
         if viewModel.toolMode == .selection {
             startPoint = nil
-            currentResizeHandle = .none
-
+            // Note: currentResizeHandle is reset in each handle's .onEnded
             if isQuickOCR && selectionRect != .zero { performOCR(geometry: geometry) }
-            else if isTranslationMode && selectionRect != .zero { performTranslation(geometry: geometry) } // New logic
+            else if isTranslationMode && selectionRect != .zero { performTranslation(geometry: geometry) }
         } else {
             if let shape = currentDrawing { viewModel.drawings.append(shape) }
             currentDrawing = nil
-            startPoint = nil 
+            startPoint = nil
         }
     }
 
@@ -663,22 +654,53 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
     
     func selectionHandles() -> some View {
         if selectionRect == .zero { return AnyView(EmptyView()) }
-        let handleSize: CGFloat = 12
-        return AnyView(ForEach(0..<8) { i in
-            let positions = [
-                CGPoint(x: selectionRect.minX, y: selectionRect.minY), CGPoint(x: selectionRect.maxX, y: selectionRect.minY),
-                CGPoint(x: selectionRect.minX, y: selectionRect.maxY), CGPoint(x: selectionRect.maxX, y: selectionRect.maxY),
-                CGPoint(x: selectionRect.midX, y: selectionRect.minY), CGPoint(x: selectionRect.midX, y: selectionRect.maxY),
-                CGPoint(x: selectionRect.minX, y: selectionRect.midY), CGPoint(x: selectionRect.maxX, y: selectionRect.midY)
-            ]
-            Circle()
-                .fill(Color.blue)
-                .frame(width: handleSize, height: handleSize)
-                .overlay(Circle().stroke(Color.white, lineWidth: 2))
-                .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
-                .position(positions[i])
-        }
-        .allowsHitTesting(false)) // Let drag gestures pass through to the gesture layer
+        
+        // Each handle: (which edge it controls, position on screen)
+        let handleDefs: [(ResizeHandle, CGPoint)] = [
+            (.topLeft,     CGPoint(x: selectionRect.minX, y: selectionRect.minY)),
+            (.topRight,    CGPoint(x: selectionRect.maxX, y: selectionRect.minY)),
+            (.bottomLeft,  CGPoint(x: selectionRect.minX, y: selectionRect.maxY)),
+            (.bottomRight, CGPoint(x: selectionRect.maxX, y: selectionRect.maxY)),
+            (.top,         CGPoint(x: selectionRect.midX, y: selectionRect.minY)),
+            (.bottom,      CGPoint(x: selectionRect.midX, y: selectionRect.maxY)),
+            (.left,        CGPoint(x: selectionRect.minX, y: selectionRect.midY)),
+            (.right,       CGPoint(x: selectionRect.maxX, y: selectionRect.midY)),
+        ]
+        
+        return AnyView(
+            ForEach(handleDefs.indices, id: \.self) { i in
+                let handle = handleDefs[i]
+                ZStack {
+                    // Large invisible tap/drag area (easier to grab)
+                    Circle()
+                        .fill(Color.white.opacity(0.001))
+                        .frame(width: 36, height: 36)
+                    // Visual dot
+                    Circle()
+                        .fill(Color.blue)
+                        .frame(width: 12, height: 12)
+                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                        .shadow(color: Color.black.opacity(0.4), radius: 2, x: 0, y: 1)
+                }
+                .position(handle.1)
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { val in
+                            // val.location is relative to the handle's position in the ZStack
+                            // We need absolute coords: handle position + drag offset
+                            let abs = CGPoint(
+                                x: handle.1.x + val.translation.width,
+                                y: handle.1.y + val.translation.height
+                            )
+                            currentResizeHandle = handle.0
+                            resizeSelection(to: abs)
+                        }
+                        .onEnded { _ in
+                            currentResizeHandle = .none
+                        }
+                )
+            }
+        )
     }
     
     // Flatten logic
@@ -940,39 +962,15 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
         guard let cropped = getCroppedImage(geometry: geometry) else { return }
         let nsImage = NSImage(cgImage: cropped, size: NSSize(width: cropped.width, height: cropped.height))
         
-        // Close the overlay FIRST, then show share picker after a short delay
-        // This is necessary because the overlay window is at .screenSaver level,
-        // which causes NSSharingServicePicker's popover to appear BEHIND it.
-        onClose()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            // Create a temporary invisible window to anchor the share picker
-            let tempWindow = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 1, height: 1),
-                styleMask: [.borderless],
-                backing: .buffered,
-                defer: false
-            )
-            tempWindow.isReleasedWhenClosed = false
-            tempWindow.backgroundColor = .clear
-            tempWindow.level = .floating
-            
-            // Center the temp window on screen
-            if let screen = NSScreen.main {
-                let screenFrame = screen.frame
-                tempWindow.setFrameOrigin(NSPoint(
-                    x: screenFrame.midX - 0.5,
-                    y: screenFrame.midY - 0.5
-                ))
-            }
-            tempWindow.orderFront(nil)
-            
+        // Temporarily lower the window level from .screenSaver to .floating,
+        // so NSSharingServicePicker popover appears IN FRONT of our overlay.
+        if let window = NSApp.keyWindow {
+            window.level = .floating
             let picker = NSSharingServicePicker(items: [nsImage])
-            picker.show(relativeTo: tempWindow.contentView!.bounds, of: tempWindow.contentView!, preferredEdge: .minY)
-            
-            // Auto-close temp window after a delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 60) {
-                tempWindow.close()
+            picker.show(relativeTo: selectionRect, of: window.contentView!, preferredEdge: .minY)
+            // Restore level after picker has opened
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                window.level = .screenSaver
             }
         }
     }
