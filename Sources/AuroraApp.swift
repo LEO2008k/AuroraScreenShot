@@ -157,15 +157,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(ocrItem)
         
         menu.addItem(NSMenuItem.separator())
-        
-        // HDR Toggle (checkmark)
-        let hdrItem = NSMenuItem(title: "Save as HDR", action: #selector(toggleHDR), keyEquivalent: "")
-        hdrItem.state = SettingsManager.shared.saveAsHDR ? .on : .off
-        // Enable always: toggleHDR will change capture quality if needed
-        hdrItem.isEnabled = true
-        menu.addItem(hdrItem)
-        
-        menu.addItem(NSMenuItem.separator())
         // Preferences with dynamic shortcut
         let prefShortcut = SettingsManager.shared.settingsShortcut
         let prefItem = NSMenuItem(title: "Preferences...", action: #selector(openPreferences), keyEquivalent: KeyboardShortcuts.keyString(for: prefShortcut.keyCode))
