@@ -577,7 +577,7 @@ struct GeneralSettingsView: View {
                         Image(systemName: "info.circle")
                             .foregroundColor(.secondary)
                             .font(.caption)
-                        Text("HDR requires Maximum quality. Change Capture Quality above to enable.")
+                        Text("Activating HDR will automatically switch Capture Quality to Maximum.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
