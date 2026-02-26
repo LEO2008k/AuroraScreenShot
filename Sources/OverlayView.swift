@@ -76,9 +76,8 @@ struct OverlayView: View {
     // MEMORY: Cached bitmap for pipette color picking (avoid re-creating per drag event)
     @State private var cachedBitmapRep: NSBitmapImageRep? = nil
     
-    // DEBUG: drag start rect to avoid coordinate drift in handles
+    // DEBUG
     @State private var dragStartRect: CGRect = .zero
-    // DEBUG: on-screen log
     @State private var debugLog: String = "[DEBUG ready]"
     
     var body: some View {
@@ -727,8 +726,9 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
                             // (handle.1 drifts each re-render; dragStartRect stays fixed)
                             if dragStartRect == .zero {
                                 dragStartRect = selectionRect
-                                debugLog = "▶ HANDLE START \(handle.0)\n  startLoc=\(Int(val.startLocation.x)),\(Int(val.startLocation.y))\n  handlePos=\(Int(handle.1.x)),\(Int(handle.1.y))"
-                                print("🔵 Handle START: \(handle.0), startLoc=\(val.startLocation), handlePos=\(handle.1)")
+                                let msg = "HANDLE START \(handle.0) startLoc=\(Int(val.startLocation.x)),\(Int(val.startLocation.y)) handlePos=\(Int(handle.1.x)),\(Int(handle.1.y))"
+                                debugLog = "▶ " + msg
+                                DebugLogger.shared.log(msg, category: "HANDLE")
                             }
                             // Use dragStartRect to get the ORIGINAL handle position (stable, no drift)
                             let originPos: CGPoint
@@ -747,14 +747,16 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
                                 x: originPos.x + val.translation.width,
                                 y: originPos.y + val.translation.height
                             )
-                            debugLog = "⟳ HANDLE DRAG \(handle.0)\n  trans=\(Int(val.translation.width)),\(Int(val.translation.height))\n  newPos=\(Int(newPos.x)),\(Int(newPos.y))"
-                            print("🔵 Handle DRAG: \(handle.0), trans=\(val.translation), newPos=\(newPos)")
+                            let msg2 = "HANDLE DRAG \(handle.0) trans=\(Int(val.translation.width)),\(Int(val.translation.height)) newPos=\(Int(newPos.x)),\(Int(newPos.y))"
+                            debugLog = "⟳ " + msg2
+                            DebugLogger.shared.log(msg2, category: "HANDLE")
                             currentResizeHandle = handle.0
                             resizeSelection(to: newPos)
                         }
                         .onEnded { _ in
-                            debugLog = "■ HANDLE END \(handle.0)\n  finalRect=\(Int(selectionRect.minX)),\(Int(selectionRect.minY)) \(Int(selectionRect.width))×\(Int(selectionRect.height))"
-                            print("🔵 Handle END: \(handle.0), finalRect=\(selectionRect)")
+                            let msg3 = "HANDLE END \(handle.0) finalRect=\(Int(selectionRect.minX)),\(Int(selectionRect.minY)) \(Int(selectionRect.width))×\(Int(selectionRect.height))"
+                            debugLog = "■ " + msg3
+                            DebugLogger.shared.log(msg3, category: "HANDLE")
                             currentResizeHandle = .none
                             dragStartRect = .zero
                         }
@@ -1041,8 +1043,9 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
             height: selectionRect.height
         )
         
-        debugLog = "📤 SHARE called\n  windowLevel=\(window.level.rawValue)\n  viewBounds=\(Int(viewBounds.width))×\(Int(viewBounds.height))\n  selRect=\(Int(selectionRect.minX)),\(Int(selectionRect.minY))\n  nsRect=\(Int(nsRect.minX)),\(Int(nsRect.minY))"
-        print("📤 Share: level=\(window.level.rawValue), bounds=\(viewBounds), selRect=\(selectionRect), nsRect=\(nsRect)")
+        let shareMsg = "SHARE windowLevel=\(window.level.rawValue) bounds=\(Int(viewBounds.width))×\(Int(viewBounds.height)) selRect=\(Int(selectionRect.minX)),\(Int(selectionRect.minY)),\(Int(selectionRect.width))×\(Int(selectionRect.height)) nsRect=\(Int(nsRect.minX)),\(Int(nsRect.minY))"
+        debugLog = "📤 " + shareMsg
+        DebugLogger.shared.log(shareMsg, category: "SHARE")
         
         // Lower level so picker appears above overlay
         window.level = .floating
@@ -1053,7 +1056,7 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             window.level = .screenSaver
-            print("📤 Share: restored window level to screenSaver")
+            DebugLogger.shared.log("SHARE picker shown, window level restored", category: "SHARE")
         }
     }
     
