@@ -147,8 +147,17 @@ struct OverlayView: View {
                 }
                 .clipShape(Rectangle().path(in: selectionRect != .zero ? selectionRect : CGRect(origin: .zero, size: geometry.size)))
                 
-                // INTERACTION LAYER (Gestures for drawing/selection)
-                // We place this BEHIND the UI controls but ABOVE the image/drawings
+                // LAYER 1: DECORATIVE VIEWS (below gesture layer — won't block drags)
+                if selectionRect != .zero {
+                    if enableAurora { auroraGlow() }
+                    selectionBorder()
+                    selectionHandles()
+                    timestampPreview()
+                    watermarkPreview()
+                }
+                
+                // LAYER 2: GESTURE HANDLER (above decorative, below interactive bars)
+                // Catches all drag events for selection creation, resize, and drawing
                 Color.clear
                     .contentShape(Rectangle())
                     .gesture(
@@ -161,13 +170,8 @@ struct OverlayView: View {
                             }
                     )
                 
-                // Selection Border & Interface
+                // LAYER 3: INTERACTIVE UI (above gesture layer — buttons receive taps)
                 if selectionRect != .zero {
-                    if enableAurora { auroraGlow() }
-                    selectionBorder()
-                    selectionHandles()
-                    timestampPreview()
-                    watermarkPreview()
                     if !isQuickOCR && !isTranslationMode {
                         // Action Bar and Tools (only for regular mode)
                         actionBar(geometry: geometry)
@@ -178,7 +182,7 @@ struct OverlayView: View {
                             toolsBar(geometry: geometry)
                         }
                         
-                        // Magnify Tool - NEW: Show magnified rectangle
+                        // Magnify Tool
                         if viewModel.toolMode == .magnify && magnifyRect != .zero && selectionRect != .zero {
                             // Render magnified version of the specified region
                             Image(decorative: image, scale: 1.0)
