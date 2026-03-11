@@ -12,18 +12,22 @@ struct DrawingShape {
 }
 
 struct OverlayView: View {
-    let image: CGImage
+    // MEMORY FIX: Image is now stored in viewModel (a class) instead of here (a struct).
+    // This prevents NSEvent closures from copying the entire CGImage when they capture [self].
     let isQuickOCR: Bool
     let isTranslationMode: Bool // New
     let onClose: () -> Void
     
+    // Convenience accessor
+    private var image: CGImage { viewModel.capturedImage! }
+    
     // Default Init
     init(image: CGImage, isQuickOCR: Bool = false, isTranslationMode: Bool = false, onClose: @escaping () -> Void, viewModel: OverlayViewModel) {
-        self.image = image
         self.isQuickOCR = isQuickOCR
         self.isTranslationMode = isTranslationMode
         self.onClose = onClose
         self.viewModel = viewModel
+        viewModel.capturedImage = image // Store in ViewModel (class)
     }
     
     @ObservedObject var viewModel: OverlayViewModel
@@ -887,7 +891,24 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
             let sX = CGFloat(flat.width) / geometry.size.width
             let sY = CGFloat(flat.height) / geometry.size.height
             let rect = CGRect(x: selectionRect.minX*sX, y: selectionRect.minY*sY, width: selectionRect.width*sX, height: selectionRect.height*sY)
-            return flat.cropping(to: rect)
+            
+            // MEMORY FIX: Don't use flat.cropping(to:) — it retains the ENTIRE source image.
+            // Instead, draw into a new CGContext to create a fully detached copy.
+            guard let cropped = flat.cropping(to: rect) else { return nil }
+            let w = cropped.width
+            let h = cropped.height
+            guard let ctx = CGContext(
+                data: nil,
+                width: w,
+                height: h,
+                bitsPerComponent: cropped.bitsPerComponent,
+                bytesPerRow: 0,
+                space: cropped.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: cropped.bitmapInfo.rawValue
+            ) else { return cropped } // fallback
+            ctx.interpolationQuality = .none
+            ctx.draw(cropped, in: CGRect(x: 0, y: 0, width: w, height: h))
+            return ctx.makeImage() ?? cropped
         }
     }
     

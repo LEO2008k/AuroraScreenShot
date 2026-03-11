@@ -95,7 +95,7 @@ class OverlayController: NSWindowController {
         // 2. Remove notification observer to break retain cycle
         NotificationCenter.default.removeObserver(self)
         
-        // 3. Reset ViewModel to release drawings data
+        // 3. Reset ViewModel to release drawings data AND the CGImage
         viewModel.reset()
         
         // 4. Break SwiftUI hosting view - this releases the CGImage
@@ -108,22 +108,18 @@ class OverlayController: NSWindowController {
             w.orderOut(nil)
             w.close()
         }
+        // MEMORY FIX: Nil out window reference so NSWindow + NSHostingView can be deallocated
+        self.window = nil
         
         // 5. Clear reference in app delegate
         if let appDelegate = NSApp.delegate as? AppDelegate {
             appDelegate.overlayController = nil
         }
         
-        // 6. Aggressive memory reclaim - two phase
-        DispatchQueue.main.async {
+        // 6. Aggressive memory reclaim
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             autoreleasepool {
-                // Phase 1: Drain pending autorelease pool immediately
-            }
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            autoreleasepool {
-                // Phase 2: Second drain after SwiftUI teardown completes
+                // Drain pending autorelease pool
             }
             // Ask malloc to return freed pages to the OS
             malloc_zone_pressure_relief(nil, 0)
