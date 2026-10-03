@@ -53,6 +53,9 @@ echo "Building project (Release, Universal arm64 + x86_64)..."
 # CHANGED: Release flag
 swift build -c release $ARCH_FLAGS
 
+# Remove old bundle so the .app is created fresh (no stale files / old dates)
+rm -rf "$APP_DIR"
+
 # Create directories
 mkdir -p "$MACOS_DIR"
 mkdir -p "$RESOURCES_DIR"
