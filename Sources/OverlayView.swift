@@ -1098,7 +1098,14 @@ else { magnifyZoomFactor = 4.0 } // Wrap around
     // MARK: - Features Actions
     func performOCR(geometry: GeometryProxy) {
         guard let cropped = getCroppedImage(geometry: geometry) else { return }
-        let ocrText = AIHelper.shared.recognizeText(from: cropped) // Now works!
+        var ocrText = AIHelper.shared.recognizeText(from: cropped) // Now works!
+        
+        // Without Screen Recording permission macOS returns a capture without window
+        // contents (wallpaper only), so OCR finds nothing. Explain instead of a bare message.
+        if ocrText == "No text detected." && !CGPreflightScreenCaptureAccess() {
+            ocrText = "Screen Recording permission is missing, so the capture has no window content.\n\nOpen System Settings → Privacy & Security → Screen Recording, remove AuroraScreenshot (−), add it again (+), then restart the app.\n\n(Rebuilding the app resets this permission because it is ad-hoc signed.)"
+            CGRequestScreenCaptureAccess()
+        }
         
         if let windowController = (NSApp.delegate as? AppDelegate)?.resultWindowController {
             windowController.close()

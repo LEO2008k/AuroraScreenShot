@@ -70,7 +70,11 @@ struct OCRResultView: View {
                 .help("Share Content")
                 .padding(.trailing, 8)
                 
-                Button("Close", action: onClose)
+                Button(action: copyAndClose) {
+                    Label("Copy & Close", systemImage: "doc.on.doc")
+                }
+                .help("Copy text (translation if available) and close")
+                .keyboardShortcut(.return, modifiers: .command)
             }
             .padding()
             .background(Color(NSColor.windowBackgroundColor))
@@ -286,6 +290,18 @@ struct OCRResultView: View {
                 }
             }
         }
+    }
+    
+    /// Copies translation if present, otherwise the original text, then closes the editor.
+    func copyAndClose() {
+        let toCopy = !translatedText.isEmpty ? translatedText : text
+        let trimmed = toCopy.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty && trimmed != "No text detected." && !trimmed.hasPrefix("Screen Recording permission") {
+            let pasteboard = NSPasteboard.general
+            pasteboard.clearContents()
+            pasteboard.setString(toCopy, forType: .string)
+        }
+        onClose()
     }
     
     func getStats(_ text: String) -> String {

@@ -320,7 +320,14 @@ struct AIHelper {
     func recognizeText(from image: CGImage) -> String {
         var recognizedText = ""
         
+        // Vision is much more reliable on larger glyphs. 1x captures (Medium/Minimum quality)
+        // often have ~10px tall text, so upscale small images before recognition.
+        let input = upscaledForOCR(image) ?? image
+        
         let request = VNRecognizeTextRequest { request, error in
+            if let error = error {
+                DebugLogger.shared.log("Vision error: \(error.localizedDescription)", category: "OCR")
+            }
             guard let observations = request.results as? [VNRecognizedTextObservation] else { return }
             
             let fullText = observations.compactMap { observation in
@@ -332,9 +339,17 @@ struct AIHelper {
         
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = true
+        if #available(macOS 13.0, *) {
+            request.automaticallyDetectsLanguage = true
+        }
         
-        let handler = VNImageRequestHandler(cgImage: image, options: [:])
-        try? handler.perform([request])
+        let handler = VNImageRequestHandler(cgImage: input, options: [:])
+        do {
+            try handler.perform([request])
+        } catch {
+            DebugLogger.shared.log("Vision perform failed: \(error.localizedDescription)", category: "OCR")
+        }
+        DebugLogger.shared.log("OCR input \(image.width)x\(image.height) -> \(input.width)x\(input.height), chars=\(recognizedText.count)", category: "OCR")
         
         // Basic fallback if Vision fails or returns empty (should rarely happen on standard macOS)
         if recognizedText.isEmpty {
@@ -342,5 +357,19 @@ struct AIHelper {
         }
         
         return recognizedText
+    }
+    
+    /// Upscales small images (shorter side < 1000px) by 2x for better OCR accuracy.
+    private func upscaledForOCR(_ image: CGImage) -> CGImage? {
+        guard min(image.width, image.height) < 1000 else { return nil }
+        let w = image.width * 2, h = image.height * 2
+        guard let ctx = CGContext(
+            data: nil, width: w, height: h, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
+        ) else { return nil }
+        ctx.interpolationQuality = .high
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+        return ctx.makeImage()
     }
 }
