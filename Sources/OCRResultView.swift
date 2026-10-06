@@ -68,13 +68,6 @@ struct OCRResultView: View {
                 }
                 .buttonStyle(.plain)
                 .help("Share Content")
-                .padding(.trailing, 8)
-                
-                Button(action: copyAndClose) {
-                    Label("Copy & Close", systemImage: "doc.on.doc")
-                }
-                .help("Copy text (translation if available) and close")
-                .keyboardShortcut(.return, modifiers: .command)
             }
             .padding()
             .background(Color(NSColor.windowBackgroundColor))
@@ -217,9 +210,11 @@ struct OCRResultView: View {
                 
                 // Copy Buttons
                 HStack(spacing: 12) {
-                    Button(action: { copyText(text, target: .original) }) {
-                        Text("Copy Original")
+                    Button(action: copyAndClose) {
+                        Label("Copy Text & Close", systemImage: "doc.on.doc")
                     }
+                    .help("Copy text (translation if available) and close")
+                    .keyboardShortcut(.return, modifiers: .command)
                     
                     if !translatedText.isEmpty {
                         Button(action: { copyText(translatedText, target: .translation) }) {
